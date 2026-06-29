@@ -1,0 +1,31 @@
+<section class="hero-section">
+  <!-- Hintergrund-Grid -->
+  <om-flickering-grid 
+    class="hero-grid-bg"
+    [squareSize]="4" 
+    [gridGap]="10" 
+    [flickerChance]="0.4" 
+    [color]="'#989FA7'" 
+    [maxOpacity]="0.5">
+  </om-flickering-grid>
+
+  <!-- Zentraler Text -->
+  <div class="hero-center-content">
+    <h1 class="main-title">
+      <om-cryptic-text 
+        [text]="'Capture Frames'" 
+        styleClass="cryptic-style">
+      </om-cryptic-text>
+    </h1>
+  </div>
+
+  <!-- Deine Bilder -->
+  <div
+    *ngFor="let img of images"
+    #imgWrapper
+    class="pi"
+    [ngClass]="img.posClass"
+  >
+    <img [src]="img.url" [alt]="img.alt" draggable="false" />
+  </div>
+</section>

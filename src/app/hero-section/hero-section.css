@@ -1,0 +1,142 @@
+/* ============================================================
+   Hero Section – Finales Layout (Referenz-Treu)
+   ============================================================ */
+
+.hero-section {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  min-height: 700px;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.hero-grid-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0; /* Hinter den Bildern */
+  pointer-events: none; /* Klicks gehen durch das Grid auf die Bilder/Links */
+}
+
+.pi {
+  position: absolute;
+  z-index: 10; /* Damit sie sicher über dem Grid schweben */
+  /* ... dein restlicher Code ... */
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.1);
+  aspect-ratio: 3 / 4; 
+  transition: box-shadow 0.3s ease;
+  will-change: transform;
+}
+
+.pi img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* ── POSITIONS ─────────────────────────────────────────── */
+
+/* 1. Oben Mitte Hinten (Feuerwerk/Aurora) */
+.pi--top-left {
+  top: 5%;
+  left: 41%; /* Leicht versetzt nach links */
+  width: clamp(80px, 9vw, 110px);
+  z-index: 1;
+}
+
+/* 2. Oben Mitte Vorne (Schnee/Largest) */
+.pi--top-center {
+  top: 10%;
+  left: 50%;
+  width: clamp(130px, 15vw, 180px);
+  margin-left: -75px; /* Hälfte der durchschnittlichen Breite zur Zentrierung */
+  z-index: 2;
+}
+
+/* 3. Oben Rechts (Mond) */
+.pi--top-right {
+  top: 15%;
+  right: 8%;
+  width: clamp(110px, 12vw, 150px);
+}
+
+/* 4. Mitte Links Oben (Rotes Gebäude) */
+.pi--mid-left-top {
+  top: 18%;
+  left: 5%;
+  width: clamp(110px, 12vw, 150px);
+}
+
+/* 5. Mitte Links Unten (Sonnenuntergang - Überlappend) */
+.pi--mid-left-bottom {
+  bottom: 15%;
+  left: 8%;
+  width: clamp(120px, 13vw, 160px);
+  z-index: 3;
+}
+
+/* 6. Ganz Unten Links (Silhouette klein) */
+/* (In deiner Referenz ist das Bild hinter dem Sonnenuntergang versetzt) */
+.pi--bottom-left {
+  bottom: 8%;
+  left: 3%;
+  width: clamp(70px, 8vw, 100px);
+  z-index: 1;
+}
+
+/* 7. Unten Mitte (Waldweg klein) */
+.pi--bottom-center {
+  bottom: 10%;
+  left: 50%;
+  width: clamp(80px, 10vw, 120px);
+  margin-left: -50px; /* Zentrierungshilfe */
+  z-index: 2;
+}
+
+/* 8. Mitte Rechts (Waldweg groß) */
+.pi--mid-right {
+  bottom: 20%;
+  right: 9%;
+  width: clamp(130px, 16vw, 190px);
+}
+
+/* 9. Unten Rechts (Katze klein) */
+.pi--bottom-right {
+  bottom: 10%;
+  right: 5%;
+  width: clamp(80px, 9vw, 110px);
+}
+
+/* Container für die mittige Ausrichtung */
+.hero-center-content {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 5; /* Höher als das Grid (0), niedriger als die Bilder (10) oder umgekehrt */
+  text-align: center;
+  width: 100%;
+  pointer-events: none; /* Text blockiert keine Klicks auf Bilder */
+}
+
+/* Styling für die H1 */
+.main-title {
+  font-family: 'Roboto', sans-serif;
+  font-size: clamp(2rem, 8vw, 5rem); /* Responsive Größe */
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin: 0;
+  color: #1a1a1a; /* Dein Text-Farbton */
+  font-family: sans-serif; /* Hier deine Font einfügen */
+}
+
+/* Optionale Klasse für den Cryptic-Effekt selbst */
+.cryptic-style {
+  display: inline-block;
+}
