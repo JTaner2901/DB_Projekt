@@ -1,0 +1,38 @@
+<section class="top-photos">
+  <div class="header">
+    <h2>Top Photos of the Week</h2>
+    <p>Handpicked masterpieces from our global community</p>
+  </div>
+
+  <div class="carousel">
+    <button class="nav-btn left" (click)="prev()" aria-label="Vorheriges Foto">
+      <i class="ti ti-chevron-left"></i>
+    </button>
+
+    <div class="stage">
+      <div
+        class="photo-card"
+        *ngFor="let photo of photos; let i = index"
+        [ngStyle]="getCardStyle(i)"
+        [class.active]="i === centerIndex"
+        (click)="goTo(i)"
+      >
+        <img [src]="photo.url" [alt]="'Foto von ' + photo.photographer" />
+
+        <span class="corner tl"></span>
+        <span class="corner tr"></span>
+        <span class="corner bl"></span>
+        <span class="corner br"></span>
+
+        <div class="info">
+          <span class="photographer">{{ photo.photographer }}</span>
+          <span class="likes"><i class="ti ti-heart"></i> {{ photo.likes }}</span>
+        </div>
+      </div>
+    </div>
+
+    <button class="nav-btn right" (click)="next()" aria-label="Nächstes Foto">
+      <i class="ti ti-chevron-right"></i>
+    </button>
+  </div>
+</section>

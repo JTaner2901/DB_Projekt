@@ -1,0 +1,24 @@
+<section class="upload-cta">
+  <div class="stack">
+    <div
+      class="stack-photo"
+      *ngFor="let photo of stackedPhotos; let i = index"
+      [style.--tx.px]="i * 52"
+      [style.--ty.px]="i * -40"
+      [style.--rot.deg]="(i - 1) * 7"
+      [style.zIndex]="i"
+    >
+      <img [src]="photo" alt="Beispielfoto" />
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="icon-badge">
+      <i class="ti ti-upload"></i>
+    </div>
+    <h2>Zeig der Welt deine Aufnahmen</h2>
+    <p>Lade deine Fotos hoch, versieh sie mit Kamera- und Standortdaten und werde Teil der Community.</p>
+    <a routerLink="/login" class="cta-btn">Jetzt hochladen</a>
+    <span class="hint">Anmeldung erforderlich</span>
+  </div>
+</section>
