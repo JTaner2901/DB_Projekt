@@ -12,18 +12,18 @@
   <div class="nav-right">
     <a
       class="upload-btn"
-      [routerLink]="isLoggedIn ? '/upload' : '/login'"
+      [routerLink]="auth.isLoggedIn() ? '/upload' : '/login'"
     >
       <i class="ti ti-upload"></i>
       <span>Upload</span>
     </a>
 
-    <ng-container *ngIf="!isLoggedIn">
+    <ng-container *ngIf="!auth.isLoggedIn()">
       <a routerLink="/login" class="login-link">Login</a>
       <a routerLink="/register" class="register-btn">Register</a>
     </ng-container>
 
-    <div class="profile-area" *ngIf="isLoggedIn">
+    <div class="profile-area" *ngIf="auth.isLoggedIn()">
       <button class="avatar-btn" (click)="toggleDropdown()">
         <img src="https://picsum.photos/seed/avatar/60/60" alt="Profilbild" />
       </button>

@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { Auth } from '../auth/Auth';
 
 @Component({
   selector: 'app-navbar',
@@ -9,10 +10,9 @@ import { RouterLink } from '@angular/router';
   styleUrl: './Navbar.css'
 })
 export class Navbar {
-  // Platzhalter - später durch echten Auth-Status (z.B. per Service/Signal) ersetzen
-  isLoggedIn = false;
-
   isDropdownOpen = false;
+
+  constructor(public auth: Auth) {}
 
   toggleDropdown(): void {
     this.isDropdownOpen = !this.isDropdownOpen;
@@ -23,8 +23,7 @@ export class Navbar {
   }
 
   logout(): void {
-    // Platzhalter - später echten Logout-Call einbauen
-    this.isLoggedIn = false;
+    this.auth.logout();
     this.closeDropdown();
   }
 }

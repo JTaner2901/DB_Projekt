@@ -1,0 +1,108 @@
+<div class="profile-page">
+
+  <!-- Cover -->
+  <div class="cover">
+    <img [src]="coverPhoto" alt="Titelbild" />
+  </div>
+
+  <!-- Header -->
+  <div class="profile-header">
+    <img class="avatar" [src]="avatar" [alt]="name" />
+
+    <div class="identity">
+      <h1>{{ name }}</h1>
+      <p class="role">{{ title }}</p>
+      <p class="location"><i class="ti ti-map-pin"></i> {{ location }}</p>
+    </div>
+
+    <div class="header-actions">
+      <button class="follow-btn">Follow</button>
+      <button class="message-btn">Message</button>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-bar">
+    <div class="stat">
+      <span class="label">Total Views</span>
+      <span class="value">{{ stats.views }}</span>
+    </div>
+    <div class="stat">
+      <span class="label">Followers</span>
+      <span class="value">{{ stats.followers }}</span>
+    </div>
+    <div class="stat">
+      <span class="label">Following</span>
+      <span class="value">{{ stats.following }}</span>
+    </div>
+    <div class="stat">
+      <span class="label">Photos Shared</span>
+      <span class="value">{{ stats.photosShared }}</span>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button
+      *ngFor="let tab of tabs"
+      class="tab"
+      [class.active]="activeTab === tab"
+      (click)="setTab(tab)"
+    >
+      {{ tab }}
+    </button>
+  </div>
+
+  <!-- Content -->
+  <div class="content" *ngIf="activeTab === 'Gallery'">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <h3>Biography</h3>
+      <p class="bio-text">{{ biography }}</p>
+
+      <h3>Camera Bag</h3>
+      <div class="gear-item" *ngFor="let item of gearBag">
+        <i class="ti" [ngClass]="item.icon"></i>
+        <div>
+          <span class="gear-name">{{ item.name }}</span>
+          <span class="gear-subtitle">{{ item.subtitle }}</span>
+        </div>
+      </div>
+
+      <div class="connect-box">
+        <span class="connect-label">Connect</span>
+        <div class="connect-icons">
+          <i class="ti ti-world"></i>
+          <i class="ti ti-share"></i>
+          <i class="ti ti-mail"></i>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Gallery -->
+    <div class="gallery-area">
+      <div class="gallery-grid">
+        <div class="featured-item">
+          <img [src]="featured.url" [alt]="featured.caption" />
+          <div class="featured-caption">
+            <span>{{ name }} · {{ featured.caption }}</span>
+          </div>
+          <div class="featured-date" *ngIf="featured.date">{{ featured.date }}</div>
+        </div>
+
+        <div class="small-item" *ngFor="let photo of galleryPhotos">
+          <img [src]="photo.url" alt="Foto" />
+        </div>
+      </div>
+
+      <button class="load-more" (click)="loadMore()">Load More Work</button>
+    </div>
+
+  </div>
+
+  <div class="content placeholder-tab" *ngIf="activeTab !== 'Gallery'">
+    <p>{{ activeTab }} - noch keine Daten hinterlegt.</p>
+  </div>
+
+</div>
