@@ -1,0 +1,52 @@
+<section class="discover">
+  <div class="filter-bar">
+    <div class="pills">
+      <div class="filter-pill">
+        <select [(ngModel)]="filter.camera" (ngModelChange)="onFilterChange()">
+          <option value="">Camera</option>
+          <option *ngFor="let c of cameras" [value]="c">{{ c }}</option>
+        </select>
+        <i class="ti ti-chevron-down"></i>
+      </div>
+
+      <div class="filter-pill">
+        <select [(ngModel)]="filter.location" (ngModelChange)="onFilterChange()">
+          <option value="">Location</option>
+          <option *ngFor="let l of locations" [value]="l">{{ l }}</option>
+        </select>
+        <i class="ti ti-chevron-down"></i>
+      </div>
+
+      <div class="filter-pill">
+        <select [(ngModel)]="filter.specs" (ngModelChange)="onFilterChange()">
+          <option value="">Specs</option>
+          <option *ngFor="let s of specs" [value]="s">{{ s }}</option>
+        </select>
+        <i class="ti ti-chevron-down"></i>
+      </div>
+
+      <button class="clear-link" (click)="resetFilters()">Clear Filters</button>
+    </div>
+
+    <div class="search-pill">
+      <i class="ti ti-search"></i>
+      <input
+        type="text"
+        placeholder="Search photos, artists, or equipment..."
+        [(ngModel)]="filter.searchTerm"
+        (ngModelChange)="onFilterChange()"
+      />
+    </div>
+  </div>
+
+  <div class="categories">
+    <div
+      class="category-tile"
+      *ngFor="let cat of categories"
+      (click)="selectCategory(cat.name)"
+    >
+      <img [src]="cat.image" [alt]="cat.name" />
+      <span class="label">{{ cat.name }}</span>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,95 @@
+.register-card {
+  width: 100%;
+  max-width: 380px;
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 40px 36px;
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.5);
+  text-align: center;
+}
+
+.logo-badge {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: #14151a;
+  color: #ffffff;
+  font-size: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+}
+
+.register-card h1 {
+  font-size: 22px;
+  font-weight: 600;
+  margin: 0 0 6px;
+  color: #14151a;
+}
+
+.subtitle {
+  font-size: 13px;
+  color: #777;
+  margin: 0 0 28px;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  text-align: left;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #444;
+}
+
+label input {
+  padding: 11px 14px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+}
+
+label input:focus {
+  border-color: #14151a;
+}
+
+.submit-btn {
+  margin-top: 8px;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  background: #14151a;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.submit-btn:hover {
+  background: #2a2b32;
+}
+
+.switch-link {
+  margin-top: 24px;
+  font-size: 13px;
+  color: #777;
+}
+
+.switch-link a {
+  color: #14151a;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.switch-link a:hover {
+  text-decoration: underline;
+}

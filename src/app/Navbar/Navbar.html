@@ -1,0 +1,38 @@
+<nav class="navbar">
+  <a routerLink="/" class="logo">
+    <i class="ti ti-aperture"></i>
+  </a>
+
+  <span class="brand">Capture Frames</span>
+
+  <div class="nav-links">
+    <a routerLink="/explore" class="nav-link">Explore</a>
+  </div>
+
+  <div class="nav-right">
+    <a
+      class="upload-btn"
+      [routerLink]="isLoggedIn ? '/upload' : '/login'"
+    >
+      <i class="ti ti-upload"></i>
+      <span>Upload</span>
+    </a>
+
+    <ng-container *ngIf="!isLoggedIn">
+      <a routerLink="/login" class="login-link">Login</a>
+      <a routerLink="/register" class="register-btn">Register</a>
+    </ng-container>
+
+    <div class="profile-area" *ngIf="isLoggedIn">
+      <button class="avatar-btn" (click)="toggleDropdown()">
+        <img src="https://picsum.photos/seed/avatar/60/60" alt="Profilbild" />
+      </button>
+
+      <div class="dropdown" *ngIf="isDropdownOpen">
+        <a routerLink="/profile" class="dropdown-item" (click)="closeDropdown()">Profil</a>
+        <a routerLink="/my-photos" class="dropdown-item" (click)="closeDropdown()">Meine Fotos</a>
+        <button class="dropdown-item logout" (click)="logout()">Logout</button>
+      </div>
+    </div>
+  </div>
+</nav>

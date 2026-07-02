@@ -1,0 +1,62 @@
+<app-grid-motion gradientColor="#14151a">
+  <div class="register-card">
+    <div class="logo-badge">
+      <i class="ti ti-aperture"></i>
+    </div>
+
+    <h1>Konto erstellen</h1>
+    <p class="subtitle">Werde Teil der Capture Frames Community</p>
+
+    <form (ngSubmit)="onSubmit()">
+      <label>
+        <span>Nutzername</span>
+        <input
+          type="text"
+          [(ngModel)]="username"
+          name="username"
+          placeholder="dein_name"
+          required
+        />
+      </label>
+
+      <label>
+        <span>E-Mail</span>
+        <input
+          type="email"
+          [(ngModel)]="email"
+          name="email"
+          placeholder="du@beispiel.de"
+          required
+        />
+      </label>
+
+      <label>
+        <span>Passwort</span>
+        <input
+          type="password"
+          [(ngModel)]="password"
+          name="password"
+          placeholder="••••••••"
+          required
+        />
+      </label>
+
+      <label>
+        <span>Passwort bestätigen</span>
+        <input
+          type="password"
+          [(ngModel)]="confirmPassword"
+          name="confirmPassword"
+          placeholder="••••••••"
+          required
+        />
+      </label>
+
+      <button type="submit" class="submit-btn">Registrieren</button>
+    </form>
+
+    <p class="switch-link">
+      Bereits ein Konto? <a routerLink="/login">Jetzt anmelden</a>
+    </p>
+  </div>
+</app-grid-motion>
