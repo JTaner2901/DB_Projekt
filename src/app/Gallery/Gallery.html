@@ -1,0 +1,17 @@
+<section class="gallery-section">
+  <div class="gallery-grid">
+    <div
+      class="gallery-item"
+      *ngFor="let photo of photos"
+      [class.tall]="photo.span === 'tall'"
+    >
+      <img [src]="photo.url" [alt]="'Foto von ' + photo.photographer" />
+      <div class="overlay">
+        <span class="photographer">{{ photo.photographer }}</span>
+        <span class="likes"><i class="ti ti-heart"></i> {{ photo.likes }}</span>
+      </div>
+    </div>
+  </div>
+
+  <button class="load-more" (click)="loadMore()">Load More Inspiration</button>
+</section>

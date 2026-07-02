@@ -1,0 +1,19 @@
+<div class="grid-motion" [style.background]="'radial-gradient(circle, transparent 0%, ' + gradientColor + ' 85%)'">
+  <div class="grid-motion-rows">
+    <div
+      class="row"
+      *ngFor="let row of rows; let i = index"
+      [style.transform]="'translateX(' + rowOffsets[i] + 'px)'"
+    >
+      <div class="row-item" *ngFor="let img of row">
+        <div class="row-item-inner" [style.backgroundImage]="'url(' + img + ')'"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay"></div>
+
+  <div class="content">
+    <ng-content></ng-content>
+  </div>
+</div>

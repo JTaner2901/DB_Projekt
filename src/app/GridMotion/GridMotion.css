@@ -1,0 +1,57 @@
+.grid-motion {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  overflow: hidden;
+  background: #14151a;
+}
+
+.grid-motion-rows {
+  position: absolute;
+  top: -15%;
+  left: -15%;
+  width: 130%;
+  height: 130%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 12px;
+  transform: rotate(-6deg) scale(1.35);
+}
+
+.row {
+  display: flex;
+  gap: 12px;
+  transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+  will-change: transform;
+}
+
+.row-item {
+  flex: 0 0 auto;
+  width: 190px;
+  height: 130px;
+}
+
+.row-item-inner {
+  width: 100%;
+  height: 100%;
+  border-radius: 10px;
+  background-size: cover;
+  background-position: center;
+  filter: brightness(0.55);
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(20, 21, 26, 0.55);
+}
+
+.content {
+  position: relative;
+  z-index: 2;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
