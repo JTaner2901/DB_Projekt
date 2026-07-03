@@ -1,0 +1,97 @@
+<div class="explore-page">
+
+  <app-discover (filterChange)="onFilterChange($event)"></app-discover>
+
+  <div class="toolbar">
+    <div class="result-info">
+      <span class="count">{{ sortedPhotos.length }}</span> Fotos gefunden
+    </div>
+
+    <div class="toolbar-controls">
+      <!-- Sortierung -->
+      <div class="sort-select">
+        <i class="ti ti-arrows-sort"></i>
+        <select [ngModel]="sortOption" (ngModelChange)="setSort($event)">
+          <option value="newest">Neueste zuerst</option>
+          <option value="popular">Beliebteste</option>
+        </select>
+      </div>
+
+      <!-- View Toggle -->
+      <div class="view-toggle">
+        <button
+          [class.active]="viewMode === 'masonry'"
+          (click)="setView('masonry')"
+          aria-label="Masonry-Ansicht"
+        >
+          <i class="ti ti-layout-masonry"></i>
+        </button>
+        <button
+          [class.active]="viewMode === 'grid'"
+          (click)="setView('grid')"
+          aria-label="Grid-Ansicht"
+        >
+          <i class="ti ti-grid-dots"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Aktive Filter Chips -->
+  <div class="chips-row" *ngIf="activeFilterChips.length > 0">
+    <span class="chip" *ngFor="let chip of activeFilterChips">
+      {{ chip.label }}
+      <i class="ti ti-x" (click)="removeChip(chip.key)"></i>
+    </span>
+    <button class="clear-all" (click)="clearAllFilters()">Alle entfernen</button>
+  </div>
+
+  <!-- Empty State -->
+  <div class="empty-state" *ngIf="sortedPhotos.length === 0">
+    <i class="ti ti-photo-off"></i>
+    <h3>Keine Fotos gefunden</h3>
+    <p>Versuch's mit weniger Filtern oder einem anderen Suchbegriff.</p>
+    <button class="clear-all" (click)="clearAllFilters()">Filter zurücksetzen</button>
+  </div>
+
+  <!-- Gallery -->
+  <div
+    class="photo-grid"
+    [class.masonry]="viewMode === 'masonry'"
+    [class.grid]="viewMode === 'grid'"
+    *ngIf="sortedPhotos.length > 0"
+  >
+    <div
+      class="photo-item"
+      *ngFor="let photo of pagedPhotos"
+      [class.tall]="viewMode === 'masonry' && photo.tall"
+    >
+      <img [src]="photo.url" [alt]="'Foto von ' + photo.photographer" />
+      <div class="overlay">
+        <span class="photographer">{{ photo.photographer }}</span>
+        <span class="likes"><i class="ti ti-heart"></i> {{ photo.likes }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pagination -->
+  <div class="pagination" *ngIf="totalPages > 1">
+    <button (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">
+      <i class="ti ti-chevron-left"></i>
+    </button>
+
+    <button
+      *ngFor="let page of pageNumbers"
+      class="page-btn"
+      [class.active]="page === currentPage"
+      (click)="goToPage(page)"
+    >
+      {{ page }}
+    </button>
+
+    <button (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages">
+      <i class="ti ti-chevron-right"></i>
+    </button>
+  </div>
+
+</div>

@@ -43,6 +43,7 @@
     <div
       class="category-tile"
       *ngFor="let cat of categories"
+      [class.active]="filter.category === cat.name"
       (click)="selectCategory(cat.name)"
     >
       <img [src]="cat.image" [alt]="cat.name" />

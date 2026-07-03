@@ -1,0 +1,64 @@
+<footer class="footer">
+  <div class="footer-top">
+
+    <div class="footer-logo">
+      <div class="logo-badge">
+        <i class="ti ti-aperture"></i>
+      </div>
+      <span class="footer-brand">Capture Frames</span>
+    </div>
+
+    <div class="footer-col">
+      <span class="col-title">Navigation</span>
+      <a routerLink="/explore">Explore</a>
+      <a routerLink="/upload">Upload</a>
+      <a routerLink="/login">Login</a>
+      <a routerLink="/register">Register</a>
+    </div>
+
+    <div class="footer-col">
+      <span class="col-title">Kategorien</span>
+      <a routerLink="/explore" *ngFor="let cat of categories">{{ cat }}</a>
+    </div>
+
+    <div class="footer-col">
+      <span class="col-title">Rechtliches</span>
+      <a href="#">Impressum</a>
+      <a href="#">Datenschutz</a>
+      <a href="#">AGB</a>
+    </div>
+
+    <div class="footer-col connect-col">
+      <span class="col-title">Connect</span>
+      <div class="connect-icons">
+        <i class="ti ti-world"></i>
+        <i class="ti ti-brand-instagram"></i>
+        <i class="ti ti-mail"></i>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="footer-divider"></div>
+
+  <div class="project-info">
+    <div class="project-course">
+      <span class="course-label">Prof. Dr. Benjamin Tannert</span>
+      <span class="course-detail">Internationaler Studiengang Medieninformatik B. Sc.</span>
+      <span class="course-detail">Datenbankbasierte Web-Anwendungen · SoSe 2026</span>
+    </div>
+
+    <div class="project-team">
+      <span class="course-label">Team</span>
+      <span class="course-detail" *ngFor="let member of team">{{ member }}</span>
+    </div>
+  </div>
+
+  <div class="footer-divider"></div>
+
+  <div class="footer-bottom">
+    <span>© {{ currentYear }} Capture Frames</span>
+    <span class="uni-note">Studienprojekt · nicht kommerziell</span>
+  </div>
+
+</footer>

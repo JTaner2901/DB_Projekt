@@ -6,6 +6,7 @@ export interface PhotoFilter {
   camera: string;
   location: string;
   specs: string;
+  category: string;
   searchTerm: string;
 }
 
@@ -31,6 +32,7 @@ export class Discover {
     camera: '',
     location: '',
     specs: '',
+    category: '',
     searchTerm: '',
   };
 
@@ -47,12 +49,12 @@ export class Discover {
   }
 
   resetFilters(): void {
-    this.filter = { camera: '', location: '', specs: '', searchTerm: '' };
+    this.filter = { camera: '', location: '', specs: '', category: '', searchTerm: '' };
     this.onFilterChange();
   }
 
   selectCategory(name: string): void {
-    // Platzhalter - später Kategorie direkt als Filter setzen
-    console.log('Kategorie gewählt:', name);
+    this.filter.category = this.filter.category === name ? '' : name;
+    this.onFilterChange();
   }
 }
