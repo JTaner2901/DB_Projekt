@@ -120,6 +120,11 @@
   transform: scale(1.08);
 }
 
+.category-tile.active {
+  outline: 3px solid #14151a;
+  outline-offset: 2px;
+}
+
 .label {
   position: absolute;
   bottom: 10px;
