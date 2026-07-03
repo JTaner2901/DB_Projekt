@@ -8,11 +8,23 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const pool = require('./db');
+const multer = require('multer');
+const path = require('path');
+
+// Multer-Konfiguration: WOHIN und WIE Dateien gespeichert werden
+const storage = multer.diskStorage({
+  destination: 'uploads/',
+  filename: (req, file, cb) => {
+    const uniqueName = Date.now() + path.extname(file.originalname);
+    cb(null, uniqueName);
+  },
+});
+const upload = multer({ storage });
 
 const app = express();
 app.use(cors());
 app.use(express.json()); // wichtig fuer POST: liest JSON aus dem Request-Body
-
+app.use('/uploads', express.static('uploads'));
 const PORT = process.env.PORT || 3000;
 
 // ---- Test-Endpunkt ----
@@ -39,13 +51,54 @@ app.get('/api/categories', async (req, res) => {
 app.get('/api/photos', async (req, res) => {
   try {
     const [rows] = await pool.query(`
-      SELECT p.photo_Id, p.Titel, p.Beschreibung, p.Datum, p.Location,
+      SELECT p.photo_Id, p.Titel, p.Beschreibung, p.Datum, p.Location, p.Bildpfad,
              b.Benutzername
       FROM Photo p
       JOIN Benutzer b ON p.user_Id = b.user_Id
       ORDER BY p.Datum DESC
     `);
     res.json(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Datenbankfehler' });
+  }
+});
+
+// Genau ein Foto mit Details auslesen
+app.get('/api/photos/:id', async (req, res) => {
+  try {
+    const [rows] = await pool.query(`
+        SELECT p.photo_Id, p.Titel, p.Beschreibung, p.Datum, p.Location, p.Bildpfad,
+               b.Benutzername       
+        FROM Photo p  
+        JOIN Benutzer b ON p.user_Id = b.user_Id
+        WHERE p.photo_Id = ?
+    `, [req.params.id]);
+    
+    // Wir senden nur das erste Ergebnis (das gesuchte Foto) zurück
+    res.json(rows[0]); 
+    
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Datenbankfehler' });
+  }
+});
+
+//ein Foto für Profilseite eines nutzers | persönliches Album eines bestimmten Nutzers
+
+app.get('/api/users/:id/photos', async (req, res) => {
+  try {
+    const [rows] = await pool.query(`
+        SELECT p.photo_Id, p.Titel, p.Beschreibung, p.Datum, p.Location,
+               b.Benutzername       
+        FROM Photo p  
+        JOIN Benutzer b ON p.user_Id = b.user_Id
+        WHERE p.user_Id = ? 
+    `, [req.params.id]);
+    
+    // Wir senden das komplette Array (alle Fotos dieses Users) zurück
+    res.json(rows); 
+    
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Datenbankfehler' });
@@ -65,29 +118,27 @@ app.get('/api/photos', async (req, res) => {
 //   "einstellungen": { "Blende": 1.8, "Shutterspeed": "1/250", "ISO": 100,
 //                      "Brennweite": 50, "Aufloesung": "6000x4000", "Objektiv": "50mm" }
 // }
-app.post('/api/photos', async (req, res) => {
-  const {
-    user_Id, Kamera_Id, Titel, Beschreibung, Datum, Location,
-    kategorien, einstellungen,
-  } = req.body;
+app.post('/api/photos', upload.single('bild'), async (req, res) => {   // ← Zeile 1: geändert
+  const { user_Id, Kamera_Id, Titel, Beschreibung, Datum, Location } = req.body;  // ← Zeile 2: gekürzt
 
-  // Einfache Validierung der Pflichtfelder ("prüfen" aus der Aufgabe)
+  const bildpfad = req.file ? req.file.path : null;                              // ← NEU
+  const kategorien = req.body.kategorien ? JSON.parse(req.body.kategorien) : [];  // ← NEU (ersetzt altes kategorien aus req.body)
+  const einstellungen = req.body.einstellungen ? JSON.parse(req.body.einstellungen) : null; // ← NEU
+
   if (!user_Id || !Titel || !Datum) {
     return res.status(400).json({ error: 'user_Id, Titel und Datum sind Pflicht' });
   }
 
-  // Eine Verbindung aus dem Pool holen, um darauf eine Transaktion zu fahren
   const conn = await pool.getConnection();
   try {
-    await conn.beginTransaction(); // ab hier: alles oder nichts
+    await conn.beginTransaction();
 
-    // 1) Das Foto selbst einfügen
     const [result] = await conn.query(
-      `INSERT INTO Photo (user_Id, Kamera_Id, Titel, Beschreibung, Datum, Location)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [user_Id, Kamera_Id || null, Titel, Beschreibung || null, Datum, Location || null]
+      `INSERT INTO Photo (user_Id, Kamera_Id, Titel, Beschreibung, Datum, Location, Bildpfad)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [user_Id, Kamera_Id || null, Titel, Beschreibung || null, Datum, Location || null, bildpfad]
     );
-    const photoId = result.insertId; // die von MySQL vergebene neue photo_Id
+    const photoId = result.insertId;
 
     // 2) Kameraeinstellungen (falls mitgeschickt)
     if (einstellungen) {
@@ -120,7 +171,12 @@ app.post('/api/photos', async (req, res) => {
   } finally {
     conn.release(); // Verbindung immer zurück in den Pool geben
   }
-});
+}); 
+
+
+
+
+
 
 // ---- Server starten ----
 app.listen(PORT, () => {
