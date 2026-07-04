@@ -46,7 +46,7 @@
   font-size: 20px;
   font-weight: 700;
   margin: 0 0 2px;
-  color: #14151a;
+  color: var(--color-text);
 }
 
 .role {
@@ -71,7 +71,7 @@
 }
 
 .follow-btn {
-  background: #14151a;
+  background: var(--color-primary);
   color: #ffffff;
   border: none;
   padding: 9px 22px;
@@ -82,12 +82,12 @@
 }
 
 .follow-btn:hover {
-  background: #2a2b32;
+  background: var(--color-primary-hover);
 }
 
 .message-btn {
   background: #ffffff;
-  color: #14151a;
+  color: var(--color-primary);
   border: 1px solid #ddd;
   padding: 9px 22px;
   border-radius: 999px;
@@ -128,7 +128,7 @@
 .stat .value {
   font-size: 18px;
   font-weight: 700;
-  color: #14151a;
+  color: var(--color-text);
 }
 
 /* Tabs */
@@ -151,8 +151,8 @@
 }
 
 .tab.active {
-  color: #14151a;
-  border-bottom-color: #14151a;
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
 }
 
 /* Content Layout */
@@ -167,7 +167,7 @@
 .sidebar h3 {
   font-size: 13px;
   font-weight: 700;
-  color: #14151a;
+  color: var(--color-text);
   margin: 0 0 10px;
 }
 
@@ -187,7 +187,7 @@
 
 .gear-item i {
   font-size: 16px;
-  color: #14151a;
+  color: var(--color-primary);
   flex: 0 0 auto;
 }
 
@@ -199,7 +199,7 @@
 .gear-name {
   font-size: 12px;
   font-weight: 600;
-  color: #14151a;
+  color: var(--color-text);
 }
 
 .gear-subtitle {
@@ -236,7 +236,7 @@
 }
 
 .connect-icons i:hover {
-  color: #14151a;
+  color: var(--color-primary);
 }
 
 /* Gallery */

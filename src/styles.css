@@ -1,4 +1,31 @@
+/* ============================================================
+   Globale Styles - Capture Frames
+   ============================================================ */
+
+:root {
+  --color-primary: #0093a5;
+  --color-primary-hover: #007686;
+  --color-secondary: #ffefae;
+  --color-text: #000000;
+
+  --font-body: 'IBM Plex Mono', monospace;
+  --font-heading: 'p22-nudgewink-pro', sans-serif;
+}
+
 html, body {
   margin: 0;
   padding: 0;
+  height: 100%;
+  background: #ffffff;
+}
+
+body {
+  font-family: var(--font-body);
+  color: var(--color-text);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-style: normal;
 }

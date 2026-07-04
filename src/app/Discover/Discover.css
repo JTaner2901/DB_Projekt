@@ -52,7 +52,7 @@
 .clear-link {
   border: none;
   background: none;
-  color: #2563eb;
+  color: var(--color-primary);
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
@@ -121,7 +121,7 @@
 }
 
 .category-tile.active {
-  outline: 3px solid #14151a;
+  outline: 3px solid var(--color-primary);
   outline-offset: 2px;
 }
 
