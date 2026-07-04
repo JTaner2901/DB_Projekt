@@ -19,15 +19,18 @@ export class Login {
   constructor(private auth: Auth, private router: Router) {}
 
   onSubmit(): void {
-    console.log('onSubmit ausgelöst mit:', this.email, this.password);
-    const success = this.auth.login(this.email, this.password);
-    console.log('Login erfolgreich?', success);
+    this.errorMessage = ''; // alte Fehlermeldung zuerst löschen
 
-    if (success) {
-      this.errorMessage = '';
-      this.router.navigateByUrl('/');
-    } else {
-      this.errorMessage = 'Falscher Nutzername oder falsches Passwort.';
-    }
+    this.auth.login(this.email, this.password).subscribe({
+      // next: läuft, wenn die API erfolgreich geantwortet hat (Status 200)
+      next: (antwort) => {
+        this.auth.setEingeloggt(antwort); // { user_Id, Benutzername, Email }
+        this.router.navigateByUrl('/');
+      },
+      // error: läuft, wenn die API einen Fehler zurückgibt (z.B. 401 falsches Passwort)
+      error: (err) => {
+        this.errorMessage = err.error?.error || 'Anmeldung fehlgeschlagen.';
+      },
+    });
   }
 }
