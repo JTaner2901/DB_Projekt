@@ -5,7 +5,7 @@
   justify-content: center;
   gap: 80px;
   padding: 160px 24px 140px;
-  background: #12141a;
+  background: #14151a;
   overflow: hidden;
 }
 
@@ -100,8 +100,8 @@
 
 .cta-btn {
   display: inline-block;
-  background: #ffffff;
-  color: #12141a;
+  background: var(--color-primary);
+  color: #ffffff;
   font-size: 16px;
   font-weight: 600;
   padding: 15px 28px;
@@ -111,7 +111,7 @@
 }
 
 .cta-btn:hover {
-  background: #e6e6e6;
+  background: var(--color-primary-hover);
   transform: translateY(-2px);
 }
 

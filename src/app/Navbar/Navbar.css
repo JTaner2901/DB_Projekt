@@ -9,7 +9,7 @@
   gap: 48px;
   width: fit-content;
   padding: 10px 28px 10px 10px;
-  background: #14151a;
+  background: var(--color-primary);
   border-radius: 999px;
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.25);
 }
@@ -22,7 +22,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #14151a;
+  color: var(--color-primary);
   font-size: 20px;
   text-decoration: none;
   flex: 0 0 auto;
@@ -89,7 +89,7 @@
 
 .register-btn {
   background: #ffffff;
-  color: #14151a;
+  color: var(--color-primary);
   font-size: 13px;
   font-weight: 600;
   text-decoration: none;

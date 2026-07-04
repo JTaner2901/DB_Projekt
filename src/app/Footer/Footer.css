@@ -1,5 +1,5 @@
 .footer {
-  background: #14151a;
+  background: var(--color-primary);
   color: rgba(255, 255, 255, 0.7);
   padding: 56px 24px 28px;
 }
@@ -30,7 +30,7 @@
   height: 42px;
   border-radius: 50%;
   background: #ffffff;
-  color: #14151a;
+  color: var(--color-primary);
   display: flex;
   align-items: center;
   justify-content: center;

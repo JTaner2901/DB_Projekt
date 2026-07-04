@@ -8,7 +8,7 @@ import { CommonModule } from '@angular/common';
   styleUrl: './GridMotion.css'
 })
 export class GridMotion implements OnInit {
-  @Input() gradientColor: string = '#14151a';
+  @Input() gradientColor: string = '#0093a5';
 
   rows: string[][] = [];
   rowOffsets: number[] = [];
@@ -26,13 +26,6 @@ export class GridMotion implements OnInit {
     '/easteregg/seni.JPEG',
     '/easteregg/Fyni.JPEG',
     '/easteregg/yunusamca.jpeg',
-    '/easteregg/mahmoud.JPEG',
-    '/easteregg/amca.JPEG',
-    '/easteregg/letzeklausuralhamdulilah.JPEG',
-    '/easteregg/erenyeager.JPEG',
-    '/easteregg/yunussleepmp4.JPEG',
-    '/easteregg/ausgelondont.JPEG',
-    
   ];
 
   ngOnInit(): void {

@@ -21,7 +21,7 @@
 
 .result-info .count {
   font-weight: 700;
-  color: #14151a;
+  color: var(--color-primary);
 }
 
 .toolbar-controls {
@@ -74,7 +74,7 @@
 }
 
 .view-toggle button.active {
-  background: #14151a;
+  background: var(--color-primary);
   color: #ffffff;
 }
 
@@ -91,8 +91,8 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  background: #f0f0f0;
-  color: #333;
+  background: var(--color-secondary);
+  color: #5a4a1a;
   font-size: 12px;
   font-weight: 500;
   padding: 6px 10px;
@@ -112,7 +112,7 @@
 .clear-all {
   background: none;
   border: none;
-  color: #2563eb;
+  color: var(--color-primary);
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
@@ -243,9 +243,9 @@
 }
 
 .pagination .page-btn.active {
-  background: #14151a;
+  background: var(--color-primary);
   color: #ffffff;
-  border-color: #14151a;
+  border-color: var(--color-primary);
 }
 
 @media (max-width: 900px) {

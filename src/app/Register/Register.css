@@ -12,7 +12,7 @@
   width: 52px;
   height: 52px;
   border-radius: 50%;
-  background: #14151a;
+  background: var(--color-primary);
   color: #ffffff;
   font-size: 24px;
   display: flex;
@@ -25,7 +25,7 @@
   font-size: 22px;
   font-weight: 600;
   margin: 0 0 6px;
-  color: #14151a;
+  color: var(--color-text);
 }
 
 .subtitle {
@@ -59,7 +59,7 @@ label input {
 }
 
 label input:focus {
-  border-color: #14151a;
+  border-color: var(--color-primary);
 }
 
 .submit-btn {
@@ -67,7 +67,7 @@ label input:focus {
   padding: 12px;
   border: none;
   border-radius: 8px;
-  background: #14151a;
+  background: var(--color-primary);
   color: #ffffff;
   font-size: 14px;
   font-weight: 600;
@@ -75,7 +75,7 @@ label input:focus {
 }
 
 .submit-btn:hover {
-  background: #2a2b32;
+  background: var(--color-primary-hover);
 }
 
 .switch-link {
@@ -85,7 +85,7 @@ label input:focus {
 }
 
 .switch-link a {
-  color: #14151a;
+  color: var(--color-primary);
   font-weight: 600;
   text-decoration: none;
 }
