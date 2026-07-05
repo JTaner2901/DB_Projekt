@@ -71,8 +71,26 @@ export class Discover implements OnInit {
     this.onFilterChange();
   }
 
+  // Eigene, lokal gehostete Bilder pro Kategorie (public/kategorien/)
+  // statt externer Bilddienste, die bei uns durch Adblocker blockiert wurden.
+  private readonly categoryImages: Record<string, string> = {
+    'Architektur': '/kategorien/architektur.jpg',
+    'Autos': '/kategorien/autos.jpg',
+    'Essen': '/kategorien/essen.jpg',
+    'Fashion': '/kategorien/fashion.jpg',
+    'Gegenstände': '/kategorien/gegenstaende.jpg',
+    'Kunst': '/kategorien/kunst.jpg',
+    'Natur': '/kategorien/natur.jpg',
+    'People': '/kategorien/people.png',
+    'Tiere': '/kategorien/tiere.jpg',
+  };
+
   // Hilfsfunktion fürs Template: zeigt an, ob eine Kategorie-Kachel aktiv ist
   istAktiv(kategorieId: number): boolean {
     return this.filter.category === String(kategorieId);
+  }
+
+  getCategoryImage(cat: Kategorie): string {
+    return this.categoryImages[cat.Name] ?? '/kategorien/default.jpg';
   }
 }
