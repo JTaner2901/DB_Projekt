@@ -1,4 +1,5 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, signal, Inject, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { ApiService } from '../services/api.services';
 
 // So sieht ein Benutzer aus, wie ihn das Backend beim Login zurückgibt
@@ -12,13 +13,22 @@ export interface AktuellerBenutzer {
 export class Auth {
   isLoggedIn = signal(false);
   currentUser = signal<AktuellerBenutzer | null>(null);
+  private isBrowser: boolean;
 
-  constructor(private api: ApiService) {
+  constructor(
+    private api: ApiService,
+    @Inject(PLATFORM_ID) platformId: Object
+  ) {
+    this.isBrowser = isPlatformBrowser(platformId);
+
     // Beim Neuladen der Seite prüfen, ob vorher schon jemand eingeloggt war
-    const gespeichert = localStorage.getItem('currentUser');
-    if (gespeichert) {
-      this.currentUser.set(JSON.parse(gespeichert));
-      this.isLoggedIn.set(true);
+    // (nur im Browser möglich, nicht beim Server-Side-Rendering)
+    if (this.isBrowser) {
+      const gespeichert = localStorage.getItem('currentUser');
+      if (gespeichert) {
+        this.currentUser.set(JSON.parse(gespeichert));
+        this.isLoggedIn.set(true);
+      }
     }
   }
 
@@ -32,12 +42,16 @@ export class Auth {
   setEingeloggt(benutzer: AktuellerBenutzer): void {
     this.currentUser.set(benutzer);
     this.isLoggedIn.set(true);
-    localStorage.setItem('currentUser', JSON.stringify(benutzer));
+    if (this.isBrowser) {
+      localStorage.setItem('currentUser', JSON.stringify(benutzer));
+    }
   }
 
   logout(): void {
     this.currentUser.set(null);
     this.isLoggedIn.set(false);
-    localStorage.removeItem('currentUser');
+    if (this.isBrowser) {
+      localStorage.removeItem('currentUser');
+    }
   }
 }
