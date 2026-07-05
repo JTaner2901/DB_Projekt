@@ -39,15 +39,15 @@
     </div>
   </div>
 
+  <!-- Kategorien kommen jetzt live aus der Datenbank (GET /api/categories) -->
   <div class="categories">
     <div
       class="category-tile"
       *ngFor="let cat of categories"
-      [class.active]="filter.category === cat.name"
-      (click)="selectCategory(cat.name)"
+      [class.active]="istAktiv(cat.KategorieID)"
+      (click)="selectCategory(cat.KategorieID)"
     >
-      <img [src]="cat.image" [alt]="cat.name" />
-      <span class="label">{{ cat.name }}</span>
+      <span class="label">{{ cat.Name }}</span>
     </div>
   </div>
 </section>
