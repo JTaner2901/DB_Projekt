@@ -6,123 +6,117 @@
     </div>
 
     <div class="upload-layout">
+      <!-- Drop Zone -->
+      <div
+        class="drop-zone"
+        [class.dragging]="isDragging"
+        [class.has-preview]="previewUrl"
+        (dragover)="onDragOver($event)"
+        (dragleave)="onDragLeave()"
+        (drop)="onDrop($event)"
+      >
+        <ng-container *ngIf="!previewUrl">
+          <div class="drop-icon">
+            <i class="ti ti-cloud-upload"></i>
+          </div>
+          <h3>Drop your masterpiece here</h3>
+          <p class="hint">Supports High-Res RAW, JPEG, or PNG (up to 50MB)</p>
+          <label class="browse-btn">
+            Browse Files
+            <input type="file" accept="image/*" (change)="onFileSelected($event)" hidden />
+          </label>
+        </ng-container>
 
-    <!-- Drop Zone -->
-    <div
-      class="drop-zone"
-      [class.dragging]="isDragging"
-      [class.has-preview]="previewUrl"
-      (dragover)="onDragOver($event)"
-      (dragleave)="onDragLeave()"
-      (drop)="onDrop($event)"
-    >
-      <ng-container *ngIf="!previewUrl">
-        <div class="drop-icon">
-          <i class="ti ti-cloud-upload"></i>
+        <div class="preview" *ngIf="previewUrl">
+          <img [src]="previewUrl" [alt]="fileName" />
+          <button class="remove-btn" (click)="removePreview()">
+            <i class="ti ti-x"></i>
+          </button>
         </div>
-        <h3>Drop your masterpiece here</h3>
-        <p class="hint">Supports High-Res RAW, JPEG, or PNG (up to 50MB)</p>
-
-        <label class="browse-btn">
-          Browse Files
-          <input type="file" accept="image/*" (change)="onFileSelected($event)" hidden />
-        </label>
-      </ng-container>
-
-      <div class="preview" *ngIf="previewUrl">
-        <img [src]="previewUrl" [alt]="fileName" />
-        <button class="remove-btn" (click)="removePreview()">
-          <i class="ti ti-x"></i>
-        </button>
       </div>
-    </div>
 
-    <!-- Form -->
-    <div class="form-card">
-      <span class="section-label">Post Details</span>
+      <!-- Form -->
+      <div class="form-card">
+        <span class="section-label">Post Details</span>
 
-      <label class="field">
-        <span>Frame Title</span>
-        <input type="text" [(ngModel)]="title" placeholder="Morning at the Summit" />
-      </label>
-
-      <label class="field">
-        <span>Description</span>
-        <textarea [(ngModel)]="description" placeholder="Tell the story behind this shot..." rows="3"></textarea>
-      </label>
-
-      <div class="field-row">
         <label class="field">
-          <span>Category</span>
-          <select [(ngModel)]="category">
-            <option value="">Select category</option>
-            <option *ngFor="let c of categories" [value]="c">{{ c }}</option>
-          </select>
+          <span>Frame Title</span>
+          <input type="text" [(ngModel)]="title" placeholder="Morning at the Summit" />
         </label>
 
         <label class="field">
-          <span>Location</span>
-          <div class="location-input">
-            <input type="text" [(ngModel)]="location" placeholder="Vatnajökull, Iceland" />
-            <i class="ti ti-map-pin"></i>
+          <span>Description</span>
+          <textarea [(ngModel)]="description" placeholder="Tell the story behind this shot..." rows="3"></textarea>
+        </label>
+
+        <div class="field-row">
+          <label class="field">
+            <span>Category</span>
+            <select [(ngModel)]="categoryId">
+              <option [ngValue]="null">Select category</option>
+              <option *ngFor="let c of categories" [ngValue]="c.KategorieID">{{ c.Name }}</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span>Location</span>
+            <div class="location-input">
+              <input type="text" [(ngModel)]="location" placeholder="Vatnajökull, Iceland" />
+              <i class="ti ti-map-pin"></i>
+            </div>
+          </label>
+        </div>
+
+        <span class="section-label">Technical Specs</span>
+        <div class="field-row three">
+          <label class="field">
+            <span>ISO</span>
+            <input type="text" [(ngModel)]="iso" placeholder="100" />
+          </label>
+          <label class="field">
+            <span>Aperture</span>
+            <input type="text" [(ngModel)]="aperture" placeholder="f/2.8" />
+          </label>
+          <label class="field">
+            <span>Shutter</span>
+            <input type="text" [(ngModel)]="shutter" placeholder="1/250" />
+          </label>
+        </div>
+
+        <div class="field-row">
+          <label class="field">
+            <span>Camera Body</span>
+            <input type="text" [(ngModel)]="cameraBody" placeholder="Sony A7R IV" />
+          </label>
+          <label class="field">
+            <span>Lens</span>
+            <input type="text" [(ngModel)]="lens" placeholder="35mm f/1.4 GM" />
+          </label>
+        </div>
+
+        <label class="field">
+          <span>Tags</span>
+          <div class="tags-box">
+            <span class="tag" *ngFor="let tag of tags">
+              {{ tag }}
+              <i class="ti ti-x" (click)="removeTag(tag)"></i>
+            </span>
+            <input
+              type="text"
+              [(ngModel)]="tagInput"
+              (keyup.enter)="addTag()"
+              placeholder="Add tags (press enter)"
+            />
           </div>
         </label>
-      </div>
 
-      <span class="section-label">Technical Specs</span>
+        <p class="error-message" *ngIf="errorMessage">{{ errorMessage }}</p>
 
-      <div class="field-row three">
-        <label class="field">
-          <span>ISO</span>
-          <input type="text" [(ngModel)]="iso" placeholder="100" />
-        </label>
-
-        <label class="field">
-          <span>Aperture</span>
-          <input type="text" [(ngModel)]="aperture" placeholder="f/2.8" />
-        </label>
-
-        <label class="field">
-          <span>Shutter</span>
-          <input type="text" [(ngModel)]="shutter" placeholder="1/250" />
-        </label>
-      </div>
-
-      <div class="field-row">
-        <label class="field">
-          <span>Camera Body</span>
-          <input type="text" [(ngModel)]="cameraBody" placeholder="Sony A7R IV" />
-        </label>
-
-        <label class="field">
-          <span>Lens</span>
-          <input type="text" [(ngModel)]="lens" placeholder="35mm f/1.4 GM" />
-        </label>
-      </div>
-
-      <label class="field">
-        <span>Tags</span>
-        <div class="tags-box">
-          <span class="tag" *ngFor="let tag of tags">
-            {{ tag }}
-            <i class="ti ti-x" (click)="removeTag(tag)"></i>
-          </span>
-          <input
-            type="text"
-            [(ngModel)]="tagInput"
-            (keyup.enter)="addTag()"
-            placeholder="Add tags (press enter)"
-          />
+        <div class="actions">
+          <a routerLink="/" class="cancel-btn">Cancel</a>
+          <button class="publish-btn" (click)="onPublish()">Publish Photo</button>
         </div>
-      </label>
-
-      <div class="actions">
-        <a routerLink="/" class="cancel-btn">Cancel</a>
-        <button class="publish-btn" (click)="onPublish()">Publish Photo</button>
       </div>
-    </div>
-
     </div>
   </div>
-
 </div>

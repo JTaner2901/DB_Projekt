@@ -1,7 +1,11 @@
-import { Component, EventEmitter, Output } from '@angular/core';
+import { Component, EventEmitter, OnInit, Output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import { ApiService } from '../services/api.services';
 
+// category ist jetzt die KategorieID (Zahl) als String im Filter-Objekt,
+// oder '' wenn keine Kategorie gewählt ist. So passt es exakt zu dem,
+// was das Backend bei ?kategorie=<ID> erwartet.
 export interface PhotoFilter {
   camera: string;
   location: string;
@@ -10,9 +14,10 @@ export interface PhotoFilter {
   searchTerm: string;
 }
 
-interface Category {
-  name: string;
-  image: string;
+// Eine Kategorie, wie sie wirklich aus der Datenbank kommt (GET /api/categories)
+interface Kategorie {
+  KategorieID: number;
+  Name: string;
 }
 
 @Component({
@@ -21,9 +26,11 @@ interface Category {
   templateUrl: './Discover.html',
   styleUrl: './Discover.css'
 })
-export class Discover {
+export class Discover implements OnInit {
   @Output() filterChange = new EventEmitter<PhotoFilter>();
 
+  // Kamera/Location/Specs bleiben vorerst als feste Auswahl, weil das
+  // Backend diese Werte noch nicht mitliefert (siehe Erklärung im Chat)
   cameras: string[] = ['Canon EOS R5', 'Sony A7 IV', 'Nikon Z6', 'Fujifilm X-T5'];
   locations: string[] = ['Bremen', 'Berlin', 'Hamburg', 'München'];
   specs: string[] = ['f/1.4 - f/2.8', 'f/4 - f/8', 'ISO 100-400', 'ISO 800+'];
@@ -36,13 +43,17 @@ export class Discover {
     searchTerm: '',
   };
 
-  categories: Category[] = [
-    { name: 'Nature', image: 'https://picsum.photos/seed/cat-nature/300/220' },
-    { name: 'Architecture', image: 'https://picsum.photos/seed/cat-architecture/300/220' },
-    { name: 'People', image: 'https://picsum.photos/seed/cat-people/300/220' },
-    { name: 'Fashion', image: 'https://picsum.photos/seed/cat-fashion/300/220' },
-    { name: 'Art', image: 'https://picsum.photos/seed/cat-art/300/220' },
-  ];
+  // Echte Kategorien aus der Datenbank, keine fest eingetragene Liste mehr
+  categories: Kategorie[] = [];
+
+  constructor(private api: ApiService) {}
+
+  ngOnInit(): void {
+    this.api.getCategories().subscribe({
+      next: (daten) => (this.categories = daten),
+      error: (err) => console.error('Kategorien konnten nicht geladen werden', err),
+    });
+  }
 
   onFilterChange(): void {
     this.filterChange.emit(this.filter);
@@ -53,8 +64,15 @@ export class Discover {
     this.onFilterChange();
   }
 
-  selectCategory(name: string): void {
-    this.filter.category = this.filter.category === name ? '' : name;
+  // Nimmt jetzt die KategorieID entgegen statt eines Namens
+  selectCategory(kategorieId: number): void {
+    const idAlsText = String(kategorieId);
+    this.filter.category = this.filter.category === idAlsText ? '' : idAlsText;
     this.onFilterChange();
+  }
+
+  // Hilfsfunktion fürs Template: zeigt an, ob eine Kategorie-Kachel aktiv ist
+  istAktiv(kategorieId: number): boolean {
+    return this.filter.category === String(kategorieId);
   }
 }
