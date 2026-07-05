@@ -11,7 +11,7 @@ const pool = require('./db');
 const multer = require('multer');
 const path = require('path');
 const bcrypt = require('bcrypt');
-
+const { WebSocketServer } = require('ws');
 // Multer-Konfiguration: WOHIN und WIE Dateien gespeichert werden
 const storage = multer.diskStorage({
   destination: 'uploads/',
@@ -308,6 +308,11 @@ app.post('/api/photos/:id/like', async (req, res) => {
       'SELECT COUNT(*) AS anzahl FROM Likes WHERE photo_Id = ?',
       [photoId]
     );
+    broadcast({
+      type: 'like-update',
+      photo_Id: Number(photoId),
+      likes: countRows[0].anzahl,
+    });
 
     res.json({
       liked: existing.length === 0,  // true = gerade geliked, false = gerade entliked
@@ -362,6 +367,29 @@ app.get('/api/photos', async (req, res) => {
   }
 });
 // ---- Server starten ----
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`Backend läuft auf http://localhost:${PORT}`);
 });
+ 
+// WebSocket-Server auf demselben Server/Port laufen lassen (kein neuer Port!)
+const wss = new WebSocketServer({ server });
+ 
+wss.on('connection', (ws) => {
+  console.log('Neuer WebSocket-Client verbunden. Aktuell verbunden:', wss.clients.size);
+ 
+  ws.on('close', () => {
+    console.log('WebSocket-Client getrennt. Noch verbunden:', wss.clients.size);
+  });
+});
+ 
+// Hilfsfunktion: schickt eine Nachricht an ALLE gerade verbundenen Clients.
+// readyState === WebSocket.OPEN stellt sicher, dass wir nicht an eine
+// Verbindung senden, die gerade dabei ist sich zu schließen.
+function broadcast(nachricht) {
+  const text = JSON.stringify(nachricht);
+  wss.clients.forEach((client) => {
+    if (client.readyState === client.OPEN) {
+      client.send(text);
+    }
+  });
+}
