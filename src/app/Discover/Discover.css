@@ -121,7 +121,7 @@
 }
 
 .category-tile.active {
-  outline: 3px solid var(--color-primary);
+  outline: 3px solid var(--color-secondary);
   outline-offset: 2px;
 }
 
@@ -133,6 +133,7 @@
   font-size: 14px;
   font-weight: 600;
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+  z-index: 1;
 }
 
 .category-tile::after {
@@ -140,6 +141,7 @@
   position: absolute;
   inset: 0;
   background: linear-gradient(to top, rgba(0, 0, 0, 0.45), transparent 60%);
+  z-index: 1;
 }
 
 @media (max-width: 900px) {

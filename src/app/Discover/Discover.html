@@ -47,6 +47,7 @@
       [class.active]="istAktiv(cat.KategorieID)"
       (click)="selectCategory(cat.KategorieID)"
     >
+      <img [src]="getCategoryImage(cat)" [alt]="cat.Name" />
       <span class="label">{{ cat.Name }}</span>
     </div>
   </div>
