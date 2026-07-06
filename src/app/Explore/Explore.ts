@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Discover, PhotoFilter } from '../Discover/Discover';
 import { ApiService } from '../services/api.services';
 import { Auth } from '../auth/Auth';
+import { PhotoDetail } from '../PhotoDetail/PhotoDetail';
 
 // So sieht ein Foto aus, wie es das Backend jetzt liefert
 // (nach der Erweiterung von GET /api/photos um likes + kategorien)
@@ -22,7 +23,7 @@ const API_BASE = 'http://localhost:3000';
 
 @Component({
   selector: 'app-explore',
-  imports: [CommonModule, FormsModule, Discover],
+  imports: [CommonModule, FormsModule, Discover, PhotoDetail],
   templateUrl: './Explore.html',
   styleUrl: './Explore.css'
 })
@@ -44,6 +45,9 @@ export class Explore implements OnInit {
   allPhotos: ExplorePhoto[] = [];
   isLoading = false;
   private vorherigeKategorie = ''; // merkt sich den letzten Filterwert unabhängig vom Objekt
+
+  // Für das Foto-Detail-Modal
+  selectedPhotoId: number | null = null;
 
   constructor(private api: ApiService, private auth: Auth) {}
 
@@ -178,5 +182,14 @@ export class Explore implements OnInit {
       },
       error: (err) => console.error('Like fehlgeschlagen', err),
     });
+  }
+
+  // Öffnet das Foto-Detail-Modal
+  openPhoto(photoId: number): void {
+    this.selectedPhotoId = photoId;
+  }
+
+  closePhoto(): void {
+    this.selectedPhotoId = null;
   }
 }

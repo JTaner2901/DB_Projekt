@@ -65,6 +65,7 @@
       class="photo-item"
       *ngFor="let photo of pagedPhotos"
       [class.tall]="viewMode === 'masonry' && photo.tall"
+      (click)="openPhoto(photo.id)"
     >
       <img [src]="photo.url" [alt]="'Foto von ' + photo.photographer" />
       <div class="overlay">
@@ -95,3 +96,5 @@
   </div>
 
 </div>
+
+<app-photo-detail [photoId]="selectedPhotoId" (close)="closePhoto()"></app-photo-detail>
