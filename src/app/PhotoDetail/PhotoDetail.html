@@ -1,0 +1,89 @@
+<div class="modal-backdrop" *ngIf="photoId" (click)="onClose()">
+  <div class="modal-card" (click)="$event.stopPropagation()">
+
+    <button class="close-btn" (click)="onClose()">
+      <i class="ti ti-x"></i>
+    </button>
+
+    <!-- Ladezustand -->
+    <div class="modal-loading" *ngIf="status() === 'loading'">
+      <i class="ti ti-loader-2 spin"></i>
+    </div>
+
+    <!-- Fehlerzustand -->
+    <div class="modal-loading" *ngIf="status() === 'error'">
+      <i class="ti ti-alert-triangle"></i>
+      <span>Foto konnte nicht geladen werden.</span>
+    </div>
+
+    <!-- Geladener Zustand -->
+    <ng-container *ngIf="status() === 'loaded'">
+      <div class="modal-image">
+        <img
+          *ngIf="imageUrl() && !imageFailed()"
+          [src]="imageUrl()"
+          [alt]="photo()?.Titel"
+          (error)="onImageError()"
+        />
+        <div class="no-image" *ngIf="!imageUrl() || imageFailed()">
+          <i class="ti ti-photo-off"></i>
+          <span>Kein Bild hinterlegt</span>
+        </div>
+      </div>
+
+      <div class="modal-info">
+        <div class="info-header">
+          <div class="author">
+            <div class="avatar-circle">{{ (photo()?.Benutzername || '?')[0] }}</div>
+            <span>{{ photo()?.Benutzername }}</span>
+          </div>
+
+          <button class="like-btn" [class.liked]="liked()" (click)="toggleLike()">
+            <i class="ti" [ngClass]="liked() ? 'ti-heart-filled' : 'ti-heart'"></i>
+            {{ likes() }}
+          </button>
+        </div>
+
+        <div class="info-body">
+          <h2>{{ photo()?.Titel }}</h2>
+          <p class="description" *ngIf="photo()?.Beschreibung">{{ photo()?.Beschreibung }}</p>
+
+          <!-- Kategorien als Tags -->
+          <div class="tags-row" *ngIf="photo()?.Kategorien?.length">
+            <span class="tag" *ngFor="let kat of photo()?.Kategorien">{{ kat }}</span>
+          </div>
+
+          <!-- Location + Datum -->
+          <div class="meta-grid">
+            <div class="meta-item" *ngIf="photo()?.Location">
+              <span class="meta-label"><i class="ti ti-map-pin"></i> Location</span>
+              <span class="meta-value">{{ photo()?.Location }}</span>
+            </div>
+            <div class="meta-item" *ngIf="photo()?.Datum">
+              <span class="meta-label"><i class="ti ti-calendar"></i> Datum</span>
+              <span class="meta-value">{{ photo()?.Datum | date: 'dd.MM.yyyy' }}</span>
+            </div>
+          </div>
+
+          <!-- Kamera -->
+          <div class="camera-section" *ngIf="kameraLabel">
+            <span class="section-label"><i class="ti ti-camera"></i> Kamera</span>
+            <span class="camera-name">{{ kameraLabel }}</span>
+          </div>
+
+          <!-- Technische Specs -->
+          <div class="specs-section" *ngIf="specItems.length > 0">
+            <span class="section-label"><i class="ti ti-settings"></i> Technische Daten</span>
+            <div class="specs-grid">
+              <div class="spec-chip" *ngFor="let spec of specItems">
+                <span class="spec-label">{{ spec.label }}</span>
+                <span class="spec-value">{{ spec.value }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+
+  </div>
+</div>

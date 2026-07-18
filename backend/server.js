@@ -12,6 +12,7 @@ const multer = require('multer');
 const path = require('path');
 const bcrypt = require('bcrypt');
 const { WebSocketServer } = require('ws');
+
 // Multer-Konfiguration: WOHIN und WIE Dateien gespeichert werden
 const storage = multer.diskStorage({
   destination: 'uploads/',
@@ -48,21 +49,39 @@ app.get('/api/categories', async (req, res) => {
   }
 });
 
-
-// Genau ein Foto mit Details auslesen
+// Genau ein Foto mit ALLEN Details auslesen (Kamera, Einstellungen, Kategorien)
 app.get('/api/photos/:id', async (req, res) => {
   try {
     const [rows] = await pool.query(`
         SELECT p.photo_Id, p.Titel, p.Beschreibung, p.Datum, p.Location, p.Bildpfad,
-               b.Benutzername       
-        FROM Photo p  
+               b.Benutzername,
+               k.Hersteller, k.Modell,
+               ke.Blende, ke.Shutterspeed, ke.ISO, ke.Brennweite, ke.Aufloesung, ke.Objektiv
+        FROM Photo p
         JOIN Benutzer b ON p.user_Id = b.user_Id
+        LEFT JOIN Kamera k ON p.Kamera_Id = k.Kamera_Id
+        LEFT JOIN Kamera_Einstellungen ke ON p.photo_Id = ke.Photo_Id
         WHERE p.photo_Id = ?
     `, [req.params.id]);
-    
-    // Wir senden nur das erste Ergebnis (das gesuchte Foto) zurück
-    res.json(rows[0]); 
-    
+
+    if (!rows[0]) {
+      return res.status(404).json({ error: 'Foto nicht gefunden' });
+    }
+
+    const foto = rows[0];
+
+    // Kategorien separat holen (bei mehreren Kategorien pro Foto würde ein
+    // direkter JOIN die Zeile sonst vervielfachen)
+    const [kategorien] = await pool.query(`
+      SELECT kat.Name
+      FROM Kategorie kat
+      JOIN Photo_Kategorie pk ON kat.KategorieID = pk.KategorieID
+      WHERE pk.photo_Id = ?
+    `, [req.params.id]);
+
+    foto.Kategorien = kategorien.map(k => k.Name);
+
+    res.json(foto);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Datenbankfehler' });
@@ -103,12 +122,12 @@ app.get('/api/users/:id/photos', async (req, res) => {
 //   "einstellungen": { "Blende": 1.8, "Shutterspeed": "1/250", "ISO": 100,
 //                      "Brennweite": 50, "Aufloesung": "6000x4000", "Objektiv": "50mm" }
 // }
-app.post('/api/photos', upload.single('bild'), async (req, res) => {   // ← Zeile 1: geändert
-  const { user_Id, Kamera_Id, Titel, Beschreibung, Datum, Location } = req.body;  // ← Zeile 2: gekürzt
+app.post('/api/photos', upload.single('bild'), async (req, res) => {
+  const { user_Id, Kamera_Id, Titel, Beschreibung, Datum, Location } = req.body;
 
-  const bildpfad = req.file ? req.file.path : null;                              // ← NEU
-  const kategorien = req.body.kategorien ? JSON.parse(req.body.kategorien) : [];  // ← NEU (ersetzt altes kategorien aus req.body)
-  const einstellungen = req.body.einstellungen ? JSON.parse(req.body.einstellungen) : null; // ← NEU
+  const bildpfad = req.file ? req.file.path : null;
+  const kategorien = req.body.kategorien ? JSON.parse(req.body.kategorien) : [];
+  const einstellungen = req.body.einstellungen ? JSON.parse(req.body.einstellungen) : null;
 
   if (!user_Id || !Titel || !Datum) {
     return res.status(400).json({ error: 'user_Id, Titel und Datum sind Pflicht' });
@@ -156,9 +175,7 @@ app.post('/api/photos', upload.single('bild'), async (req, res) => {   // ← Ze
   } finally {
     conn.release(); // Verbindung immer zurück in den Pool geben
   }
-}); 
-
-
+});
 
 // ============================================================
 //  AUTHENTIFIZIERUNG
@@ -229,16 +246,14 @@ app.post('/api/auth/login', async (req, res) => {
 // Einen Kommentar zu einem Foto schreiben
 // POST /api/photos/5/comments   Body: { "user_Id": 1, "Text": "Tolles Foto!" }
 app.post('/api/photos/:id/comments', async (req, res) => {
-  const photoId = req.params.id;       // kommt aus der URL
-  const { user_Id, Text } = req.body;  // kommt aus dem Body
+  const photoId = req.params.id;
+  const { user_Id, Text } = req.body;
 
   if (!user_Id || !Text) {
     return res.status(400).json({ error: 'user_Id und Text sind Pflicht' });
   }
 
   try {
-    // kommentar_Id vergibt MySQL selbst (AUTO_INCREMENT),
-    // Datum füllt sich selbst (DEFAULT CURRENT_TIMESTAMP) -> beide nicht angeben
     const [result] = await pool.query(
       'INSERT INTO Kommentar (user_Id, photo_Id, Text) VALUES (?, ?, ?)',
       [user_Id, photoId, Text]
@@ -339,9 +354,10 @@ app.get('/api/photos/:id/likes', async (req, res) => {
   }
 });
 
-
+// Alle Fotos, optional gefiltert nach Kategorie
+// GET /api/photos oder /api/photos?kategorie=1
 app.get('/api/photos', async (req, res) => {
-  const { kategorie } = req.query; // z.B. aus /api/photos?kategorie=1
+  const { kategorie } = req.query;
 
   try {
     let sql = `
@@ -366,22 +382,23 @@ app.get('/api/photos', async (req, res) => {
     res.status(500).json({ error: 'Datenbankfehler' });
   }
 });
+
 // ---- Server starten ----
 const server = app.listen(PORT, () => {
   console.log(`Backend läuft auf http://localhost:${PORT}`);
 });
- 
+
 // WebSocket-Server auf demselben Server/Port laufen lassen (kein neuer Port!)
 const wss = new WebSocketServer({ server });
- 
+
 wss.on('connection', (ws) => {
   console.log('Neuer WebSocket-Client verbunden. Aktuell verbunden:', wss.clients.size);
- 
+
   ws.on('close', () => {
     console.log('WebSocket-Client getrennt. Noch verbunden:', wss.clients.size);
   });
 });
- 
+
 // Hilfsfunktion: schickt eine Nachricht an ALLE gerade verbundenen Clients.
 // readyState === WebSocket.OPEN stellt sicher, dass wir nicht an eine
 // Verbindung senden, die gerade dabei ist sich zu schließen.

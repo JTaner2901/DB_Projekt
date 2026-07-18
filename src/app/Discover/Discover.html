@@ -43,7 +43,7 @@
   <div class="categories">
     <div
       class="category-tile"
-      *ngFor="let cat of categories"
+      *ngFor="let cat of categories()"
       [class.active]="istAktiv(cat.KategorieID)"
       (click)="selectCategory(cat.KategorieID)"
     >
