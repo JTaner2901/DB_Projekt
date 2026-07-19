@@ -69,6 +69,23 @@ app.get('/api/photos/:id', async (req, res) => {
   }
 });
 
+// Ein Benutzerprofil auslesen (ohne Passwort!)
+app.get('/api/users/:id', async (req, res) => {
+  try {
+    const [rows] = await pool.query(
+      `SELECT user_Id, Benutzername, Email, Location, Profilbild, Beschreibung, Registrierungsdatum
+       FROM Benutzer WHERE user_Id = ?`,
+      [req.params.id]
+    );
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'Benutzer nicht gefunden' });
+    }
+    res.json(rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Datenbankfehler' });
+  }
+});
 //ein Foto für Profilseite eines nutzers | persönliches Album eines bestimmten Nutzers
 
 app.get('/api/users/:id/photos', async (req, res) => {
