@@ -76,32 +76,33 @@ export class PhotoDetail implements OnChanges {
     return items;
   }
 
-  private ladeAlles(id: number): void {
-    this.status.set('loading');
-    this.photo.set(null);
-    this.imageUrl.set('');
-    this.imageFailed.set(false);
+private ladeAlles(id: number): void {
+  this.status.set('loading');
+  this.photo.set(null);
+  this.imageUrl.set('');
+  this.imageFailed.set(false);
 
-    forkJoin({
-      photo: this.api.getPhoto(id),
-      likesRes: this.api.getLikes(id),
-    }).subscribe({
-      next: ({ photo, likesRes }: { photo: PhotoData; likesRes: { likes: number } }) => {
-        if (this.photoId !== id) return; // veraltete Antwort ignorieren
+  const benutzer = this.auth.currentUser();
 
-        this.photo.set(photo);
-        this.imageUrl.set(photo?.Bildpfad ? `${API_BASE}/${photo.Bildpfad}` : '');
-        this.likes.set(likesRes?.likes ?? 0);
-        this.status.set('loaded');
-      },
-      error: (err) => {
-        console.error('Foto konnte nicht geladen werden', err);
-        if (this.photoId === id) {
-          this.status.set('error');
-        }
-      },
-    });
-  }
+  forkJoin({
+    photo: this.api.getPhoto(id),
+    likesRes: this.api.getLikes(id, benutzer?.user_Id),
+  }).subscribe({
+    next: ({ photo, likesRes }: { photo: PhotoData; likesRes: { likes: number; liked: boolean } }) => {
+      if (this.photoId !== id) return;
+
+      this.photo.set(photo);
+      this.imageUrl.set(photo?.Bildpfad ? `${API_BASE}/${photo.Bildpfad}` : '');
+      this.likes.set(likesRes?.likes ?? 0);
+      this.liked.set(likesRes?.liked ?? false);
+      this.status.set('loaded');
+    },
+    error: (err) => {
+      console.error('Foto konnte nicht geladen werden', err);
+      if (this.photoId === id) this.status.set('error');
+    },
+  });
+}
 
   onImageError(): void {
     this.imageFailed.set(true);

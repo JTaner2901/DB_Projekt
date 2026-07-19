@@ -69,7 +69,11 @@ export class ApiService {
     return this.http.post(`${API_URL}/api/photos/${photoId}/like`, { user_Id: userId });
   }
 
-  getLikes(photoId: number): Observable<any> {
-    return this.http.get(`${API_URL}/api/photos/${photoId}/likes`);
+getLikes(photoId: number, userId?: number): Observable<any> {
+  let url = `${API_URL}/api/photos/${photoId}/likes`;
+  if (userId) {
+    url += `?user_Id=${userId}`;
   }
+  return this.http.get(url);
+}
 }
