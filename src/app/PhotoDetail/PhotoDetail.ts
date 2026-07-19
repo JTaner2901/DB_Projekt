@@ -1,0 +1,131 @@
+import { Component, EventEmitter, Input, OnChanges, Output, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { forkJoin } from 'rxjs';
+import { ApiService } from '../services/api.services';
+import { Auth } from '../auth/Auth';
+
+const API_BASE = 'http://localhost:3000';
+
+interface PhotoData {
+  photo_Id: number;
+  Titel: string;
+  Beschreibung: string;
+  Datum: string;
+  Location: string;
+  Bildpfad: string;
+  Benutzername: string;
+  Hersteller: string | null;
+  Modell: string | null;
+  Blende: number | null;
+  Shutterspeed: string | null;
+  ISO: number | null;
+  Brennweite: number | null;
+  Aufloesung: string | null;
+  Objektiv: string | null;
+  Kategorien: string[];
+}
+
+type ModalStatus = 'idle' | 'loading' | 'loaded' | 'error';
+
+@Component({
+  selector: 'app-photo-detail',
+  imports: [CommonModule],
+  templateUrl: './PhotoDetail.html',
+  styleUrl: './PhotoDetail.css'
+})
+export class PhotoDetail implements OnChanges {
+  @Input() photoId: number | null = null;
+  @Output() close = new EventEmitter<void>();
+
+  // Alles, was sich async ändert und im Template angezeigt wird, als Signal -
+  // behebt zuverlässig Change-Detection-Probleme (siehe NG0100 vorhin bei Discover)
+  photo = signal<PhotoData | null>(null);
+  imageUrl = signal('');
+  imageFailed = signal(false);
+  likes = signal(0);
+  liked = signal(false);
+  status = signal<ModalStatus>('idle');
+
+  constructor(private api: ApiService, private auth: Auth) {}
+
+  ngOnChanges(): void {
+    if (this.photoId) {
+      this.ladeAlles(this.photoId);
+    } else {
+      this.status.set('idle');
+      this.photo.set(null);
+    }
+  }
+
+  get kameraLabel(): string | null {
+    const p = this.photo();
+    if (!p?.Hersteller && !p?.Modell) return null;
+    return [p?.Hersteller, p?.Modell].filter(Boolean).join(' ');
+  }
+
+  get specItems(): { label: string; value: string }[] {
+    const p = this.photo();
+    if (!p) return [];
+    const items: { label: string; value: string }[] = [];
+    if (p.ISO) items.push({ label: 'ISO', value: String(p.ISO) });
+    if (p.Blende) items.push({ label: 'Blende', value: `f/${p.Blende}` });
+    if (p.Shutterspeed) items.push({ label: 'Shutter', value: p.Shutterspeed });
+    if (p.Brennweite) items.push({ label: 'Brennweite', value: `${p.Brennweite}mm` });
+    if (p.Objektiv) items.push({ label: 'Objektiv', value: p.Objektiv });
+    if (p.Aufloesung) items.push({ label: 'Auflösung', value: p.Aufloesung });
+    return items;
+  }
+
+  private ladeAlles(id: number): void {
+    this.status.set('loading');
+    this.photo.set(null);
+    this.imageUrl.set('');
+    this.imageFailed.set(false);
+
+    forkJoin({
+      photo: this.api.getPhoto(id),
+      likesRes: this.api.getLikes(id),
+    }).subscribe({
+      next: ({ photo, likesRes }: { photo: PhotoData; likesRes: { likes: number } }) => {
+        if (this.photoId !== id) return; // veraltete Antwort ignorieren
+
+        this.photo.set(photo);
+        this.imageUrl.set(photo?.Bildpfad ? `${API_BASE}/${photo.Bildpfad}` : '');
+        this.likes.set(likesRes?.likes ?? 0);
+        this.status.set('loaded');
+      },
+      error: (err) => {
+        console.error('Foto konnte nicht geladen werden', err);
+        if (this.photoId === id) {
+          this.status.set('error');
+        }
+      },
+    });
+  }
+
+  onImageError(): void {
+    this.imageFailed.set(true);
+  }
+
+  onClose(): void {
+    this.status.set('idle');
+    this.photo.set(null);
+    this.close.emit();
+  }
+
+  toggleLike(): void {
+    const benutzer = this.auth.currentUser();
+    if (!benutzer || !this.photoId) {
+      alert('Bitte melde dich an, um Fotos zu liken.');
+      return;
+    }
+
+    this.api.toggleLike(this.photoId, benutzer.user_Id).subscribe({
+      next: (antwort: { liked: boolean; likes: number }) => {
+        this.liked.set(antwort.liked);
+        this.likes.set(antwort.likes);
+      },
+      error: (err) => console.error('Like fehlgeschlagen', err),
+    });
+  }
+}
