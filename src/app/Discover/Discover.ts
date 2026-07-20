@@ -1,4 +1,4 @@
-import { Component, EventEmitter, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, OnInit, Output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { ApiService } from '../services/api.services';
@@ -43,14 +43,16 @@ export class Discover implements OnInit {
     searchTerm: '',
   };
 
-  // Echte Kategorien aus der Datenbank, keine fest eingetragene Liste mehr
-  categories: Kategorie[] = [];
+  // Echte Kategorien aus der Datenbank - als Signal, damit Angular
+  // Änderungen zuverlässig erkennt (behebt NG0100 ExpressionChangedAfterItHasBeenChecked,
+  // das auftrat, wenn die Antwort sehr schnell/synchron aus dem Cache kam)
+  categories = signal<Kategorie[]>([]);
 
   constructor(private api: ApiService) {}
 
   ngOnInit(): void {
     this.api.getCategories().subscribe({
-      next: (daten) => (this.categories = daten),
+      next: (daten) => this.categories.set(daten),
       error: (err) => console.error('Kategorien konnten nicht geladen werden', err),
     });
   }
@@ -71,8 +73,12 @@ export class Discover implements OnInit {
     this.onFilterChange();
   }
 
+  // Hilfsfunktion fürs Template: zeigt an, ob eine Kategorie-Kachel aktiv ist
+  istAktiv(kategorieId: number): boolean {
+    return this.filter.category === String(kategorieId);
+  }
+
   // Eigene, lokal gehostete Bilder pro Kategorie (public/kategorien/)
-  // statt externer Bilddienste, die bei uns durch Adblocker blockiert wurden.
   private readonly categoryImages: Record<string, string> = {
     'Architektur': '/kategorien/architektur.jpg',
     'Autos': '/kategorien/autos.jpg',
@@ -81,14 +87,9 @@ export class Discover implements OnInit {
     'Gegenstände': '/kategorien/gegenstaende.jpg',
     'Kunst': '/kategorien/kunst.jpg',
     'Natur': '/kategorien/natur.jpg',
-    'People': '/kategorien/people.png',
+    'People': '/kategorien/people.jpg',
     'Tiere': '/kategorien/tiere.jpg',
   };
-
-  // Hilfsfunktion fürs Template: zeigt an, ob eine Kategorie-Kachel aktiv ist
-  istAktiv(kategorieId: number): boolean {
-    return this.filter.category === String(kategorieId);
-  }
 
   getCategoryImage(cat: Kategorie): string {
     return this.categoryImages[cat.Name] ?? '/kategorien/default.jpg';

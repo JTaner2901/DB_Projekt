@@ -1,189 +1,132 @@
-import { Component, EventEmitter, HostListener, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, Output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { forkJoin } from 'rxjs';
 import { ApiService } from '../services/api.services';
 import { Auth } from '../auth/Auth';
 
 const API_BASE = 'http://localhost:3000';
 
-// Alle Infos für das Detail-Modal - kommt vom erweiterten
-// Endpoint GET /api/photos/:id (siehe Hinweis im Chat zur ApiService-Ergänzung)
-interface PhotoDetailData {
-  id: number;
-  url: string;
-  photographer: string;
-  title: string;
-  description: string;
-  location: string;
-  createdAt: string;
-  camera: string;
-  lens: string;
-  aperture: string;
-  shutterSpeed: string;
-  iso: string;
-  focalLength: string;
-  resolution: string;
-  categories: string[];
-  likes: number;
-  liked: boolean;
+interface PhotoData {
+  photo_Id: number;
+  Titel: string;
+  Beschreibung: string;
+  Datum: string;
+  Location: string;
+  Bildpfad: string;
+  Benutzername: string;
+  Hersteller: string | null;
+  Modell: string | null;
+  Blende: number | null;
+  Shutterspeed: string | null;
+  ISO: number | null;
+  Brennweite: number | null;
+  Aufloesung: string | null;
+  Objektiv: string | null;
+  Kategorien: string[];
 }
+
+type ModalStatus = 'idle' | 'loading' | 'loaded' | 'error';
 
 @Component({
   selector: 'app-photo-detail',
   imports: [CommonModule],
   templateUrl: './PhotoDetail.html',
-  styleUrl: './PhotoDetail.css',
+  styleUrl: './PhotoDetail.css'
 })
 export class PhotoDetail implements OnChanges {
   @Input() photoId: number | null = null;
   @Output() close = new EventEmitter<void>();
 
-  photo: PhotoDetailData | null = null;
-  isLoading = false;
-  errorMsg = '';
-
-  // steuert die Schließen-Animation, bevor das Modal wirklich aus dem DOM verschwindet
-  isClosing = false;
-
-  // Instagram-artiger Herz-Burst bei Doppelklick aufs Bild
-  showHeartBurst = false;
-  private heartBurstTimer?: ReturnType<typeof setTimeout>;
-  private closeTimer?: ReturnType<typeof setTimeout>;
+  // Alles, was sich async ändert und im Template angezeigt wird, als Signal -
+  // behebt zuverlässig Change-Detection-Probleme (siehe NG0100 vorhin bei Discover)
+  photo = signal<PhotoData | null>(null);
+  imageUrl = signal('');
+  imageFailed = signal(false);
+  likes = signal(0);
+  liked = signal(false);
+  status = signal<ModalStatus>('idle');
 
   constructor(private api: ApiService, private auth: Auth) {}
 
-  ngOnChanges(changes: SimpleChanges): void {
-    if (!changes['photoId']) return;
-
-    if (this.photoId !== null) {
-      this.isClosing = false;
-      this.ladeDetails(this.photoId);
-      document.body.style.overflow = 'hidden'; // Hintergrund nicht mitscrollen
+  ngOnChanges(): void {
+    if (this.photoId) {
+      this.ladeAlles(this.photoId);
     } else {
-      document.body.style.overflow = '';
+      this.status.set('idle');
+      this.photo.set(null);
     }
   }
 
-  @HostListener('document:keydown.escape')
-  onEscape(): void {
-    if (this.photoId !== null && !this.isClosing) {
-      this.requestClose();
-    }
+  get kameraLabel(): string | null {
+    const p = this.photo();
+    if (!p?.Hersteller && !p?.Modell) return null;
+    return [p?.Hersteller, p?.Modell].filter(Boolean).join(' ');
   }
 
-  private ladeDetails(id: number): void {
-    this.isLoading = true;
-    this.errorMsg = '';
-    this.photo = null;
-
-    // Hinweis: getPhoto() liefert (wie auch getPhotos() in Explore) den
-    // Liked-Status aktuell nicht userspezifisch mit - der wird erst nach
-    // dem ersten Klick auf den Like-Button über toggleLike() bekannt.
-    this.api.getPhoto(id).subscribe({
-      next: (p: any) => {
-        this.photo = this.mapPhoto(p, id);
-        this.isLoading = false;
-      },
-      error: (err: any) => {
-        console.error('Foto-Details konnten nicht geladen werden', err);
-        this.errorMsg = 'Dieses Foto konnte nicht geladen werden.';
-        this.isLoading = false;
-      },
-    });
+  get specItems(): { label: string; value: string }[] {
+    const p = this.photo();
+    if (!p) return [];
+    const items: { label: string; value: string }[] = [];
+    if (p.ISO) items.push({ label: 'ISO', value: String(p.ISO) });
+    if (p.Blende) items.push({ label: 'Blende', value: `f/${p.Blende}` });
+    if (p.Shutterspeed) items.push({ label: 'Shutter', value: p.Shutterspeed });
+    if (p.Brennweite) items.push({ label: 'Brennweite', value: `${p.Brennweite}mm` });
+    if (p.Objektiv) items.push({ label: 'Objektiv', value: p.Objektiv });
+    if (p.Aufloesung) items.push({ label: 'Auflösung', value: p.Aufloesung });
+    return items;
   }
 
-  private mapPhoto(p: any, fallbackId: number): PhotoDetailData {
-    return {
-      id: p.photo_Id ?? fallbackId,
-      url: p.Bildpfad ? `${API_BASE}/${p.Bildpfad}` : 'https://picsum.photos/800/600',
-      photographer: p.Benutzername || 'Unbekannt',
-      title: p.Titel || '',
-      description: p.Beschreibung || '',
-      location: p.Location || '',
-      createdAt: p.Datum || '',
-      camera: p.Kamera || '',
-      lens: p.Objektiv || '',
-      aperture: p.Blende ? `f/${p.Blende}` : '',
-      shutterSpeed: p.Shutterspeed || '',
-      iso: p.Iso ? `ISO ${p.Iso}` : '',
-      focalLength: p.Brennweite ? `${p.Brennweite} mm` : '',
-      resolution: p.Auflösung || '',
-      categories: p.kategorien
-        ? String(p.kategorien).split(',').map((k: string) => k.trim()).filter(Boolean)
-        : [],
-      likes: p.likes ?? 0,
-      liked: p.liked ?? false,
-    };
+private ladeAlles(id: number): void {
+  this.status.set('loading');
+  this.photo.set(null);
+  this.imageUrl.set('');
+  this.imageFailed.set(false);
+
+  const benutzer = this.auth.currentUser();
+
+  forkJoin({
+    photo: this.api.getPhoto(id),
+    likesRes: this.api.getLikes(id, benutzer?.user_Id),
+  }).subscribe({
+    next: ({ photo, likesRes }: { photo: PhotoData; likesRes: { likes: number; liked: boolean } }) => {
+      if (this.photoId !== id) return;
+
+      this.photo.set(photo);
+      this.imageUrl.set(photo?.Bildpfad ? `${API_BASE}/${photo.Bildpfad}` : '');
+      this.likes.set(likesRes?.likes ?? 0);
+      this.liked.set(likesRes?.liked ?? false);
+      this.status.set('loaded');
+    },
+    error: (err) => {
+      console.error('Foto konnte nicht geladen werden', err);
+      if (this.photoId === id) this.status.set('error');
+    },
+  });
+}
+
+  onImageError(): void {
+    this.imageFailed.set(true);
   }
 
-  // Nur die Specs anzeigen, die das Backend tatsächlich mitliefert
-  // (z.B. wenn nicht jedes Foto Einstellungen hinterlegt hat)
-  get specEntries(): { label: string; value: string; icon: string }[] {
-    if (!this.photo) return [];
-    const alle = [
-      { label: 'Kamera', value: this.photo.camera, icon: 'ti-camera' },
-      { label: 'Objektiv', value: this.photo.lens, icon: 'ti-aperture' },
-      { label: 'Blende', value: this.photo.aperture, icon: 'ti-circle-dashed' },
-      { label: 'Belichtung', value: this.photo.shutterSpeed, icon: 'ti-clock' },
-      { label: 'ISO', value: this.photo.iso, icon: 'ti-sun' },
-      { label: 'Brennweite', value: this.photo.focalLength, icon: 'ti-focus-2' },
-      { label: 'Auflösung', value: this.photo.resolution, icon: 'ti-photo' },
-    ];
-    return alle.filter((e) => !!e.value);
-  }
-
-  onBackdropClick(): void {
-    this.requestClose();
-  }
-
-  onDialogClick(event: MouseEvent): void {
-    event.stopPropagation();
-  }
-
-  requestClose(): void {
-    if (this.isClosing) return;
-    this.isClosing = true;
-    clearTimeout(this.closeTimer);
-    // Dauer muss zur CSS-Schließanimation (pd-dialog-out / pd-fade-out) passen
-    this.closeTimer = setTimeout(() => {
-      document.body.style.overflow = '';
-      this.close.emit();
-    }, 220);
-  }
-
-  // Doppelklick aufs Bild = liken + Herz-Animation, wie man es von Instagram kennt
-  onImageDoubleClick(): void {
-    if (!this.photo) return;
-    if (!this.photo.liked) {
-      this.toggleLike();
-    }
-    this.triggerHeartBurst();
-  }
-
-  private triggerHeartBurst(): void {
-    this.showHeartBurst = false;
-    // kurzer Reflow-Trick, damit die Animation auch bei schnellem Mehrfach-Doppelklick neu startet
-    requestAnimationFrame(() => {
-      this.showHeartBurst = true;
-      clearTimeout(this.heartBurstTimer);
-      this.heartBurstTimer = setTimeout(() => (this.showHeartBurst = false), 700);
-    });
+  onClose(): void {
+    this.status.set('idle');
+    this.photo.set(null);
+    this.close.emit();
   }
 
   toggleLike(): void {
-    if (!this.photo) return;
     const benutzer = this.auth.currentUser();
-    if (!benutzer) {
+    if (!benutzer || !this.photoId) {
       alert('Bitte melde dich an, um Fotos zu liken.');
       return;
     }
 
-    this.api.toggleLike(this.photo.id, benutzer.user_Id).subscribe({
+    this.api.toggleLike(this.photoId, benutzer.user_Id).subscribe({
       next: (antwort: { liked: boolean; likes: number }) => {
-        if (!this.photo) return;
-        this.photo.liked = antwort.liked;
-        this.photo.likes = antwort.likes;
+        this.liked.set(antwort.liked);
+        this.likes.set(antwort.likes);
       },
-      error: (err: any) => console.error('Like fehlgeschlagen', err),
+      error: (err) => console.error('Like fehlgeschlagen', err),
     });
   }
 }

@@ -1,86 +1,89 @@
-<div
-  class="pd-overlay"
-  *ngIf="photoId !== null || isClosing"
-  [class.pd-closing]="isClosing"
-  (click)="onBackdropClick()"
->
-  <div class="pd-dialog" (click)="onDialogClick($event)">
-    <button class="pd-close" (click)="requestClose()" aria-label="Schließen">
+<div class="modal-backdrop" *ngIf="photoId" (click)="onClose()">
+  <div class="modal-card" (click)="$event.stopPropagation()">
+
+    <button class="close-btn" (click)="onClose()">
       <i class="ti ti-x"></i>
     </button>
 
     <!-- Ladezustand -->
-    <div class="pd-loading" *ngIf="isLoading">
-      <div class="pd-skeleton-image"></div>
-      <div class="pd-skeleton-info">
-        <div class="pd-skeleton-line w-60"></div>
-        <div class="pd-skeleton-line w-40"></div>
-        <div class="pd-skeleton-line w-80"></div>
-        <div class="pd-skeleton-line w-80"></div>
-        <div class="pd-skeleton-line w-30"></div>
-      </div>
+    <div class="modal-loading" *ngIf="status() === 'loading'">
+      <i class="ti ti-loader-2 spin"></i>
     </div>
 
-    <!-- Fehler -->
-    <div class="pd-error" *ngIf="!isLoading && errorMsg">
-      <i class="ti ti-photo-off"></i>
-      <p>{{ errorMsg }}</p>
+    <!-- Fehlerzustand -->
+    <div class="modal-loading" *ngIf="status() === 'error'">
+      <i class="ti ti-alert-triangle"></i>
+      <span>Foto konnte nicht geladen werden.</span>
     </div>
 
-    <!-- Inhalt -->
-    <ng-container *ngIf="!isLoading && !errorMsg && photo as p">
-      <div class="pd-image-side" (dblclick)="onImageDoubleClick()">
-        <img [src]="p.url" [alt]="'Foto von ' + p.photographer" />
-        <i class="ti ti-heart-filled pd-heart-burst" *ngIf="showHeartBurst"></i>
+    <!-- Geladener Zustand -->
+    <ng-container *ngIf="status() === 'loaded'">
+      <div class="modal-image">
+        <img
+          *ngIf="imageUrl() && !imageFailed()"
+          [src]="imageUrl()"
+          [alt]="photo()?.Titel"
+          (error)="onImageError()"
+        />
+        <div class="no-image" *ngIf="!imageUrl() || imageFailed()">
+          <i class="ti ti-photo-off"></i>
+          <span>Kein Bild hinterlegt</span>
+        </div>
       </div>
 
-      <div class="pd-info-side">
-        <div class="pd-info-header">
-          <div class="pd-avatar">{{ p.photographer.charAt(0).toUpperCase() }}</div>
-          <div class="pd-header-text">
-            <span class="pd-photographer">{{ p.photographer }}</span>
-            <span class="pd-location" *ngIf="p.location">
-              <i class="ti ti-map-pin"></i> {{ p.location }}
-            </span>
+      <div class="modal-info">
+        <div class="info-header">
+          <div class="author">
+            <div class="avatar-circle">{{ (photo()?.Benutzername || '?')[0] }}</div>
+            <span>{{ photo()?.Benutzername }}</span>
           </div>
+
+          <button class="like-btn" [class.liked]="liked()" (click)="toggleLike()">
+            <i class="ti" [ngClass]="liked() ? 'ti-heart-filled' : 'ti-heart'"></i>
+            {{ likes() }}
+          </button>
         </div>
 
-        <div class="pd-info-body">
-          <h2 class="pd-title" *ngIf="p.title">{{ p.title }}</h2>
-          <p class="pd-description" *ngIf="p.description">{{ p.description }}</p>
+        <div class="info-body">
+          <h2>{{ photo()?.Titel }}</h2>
+          <p class="description" *ngIf="photo()?.Beschreibung">{{ photo()?.Beschreibung }}</p>
 
-          <div class="pd-categories" *ngIf="p.categories.length">
-            <span class="pd-category-chip" *ngFor="let kat of p.categories">{{ kat }}</span>
+          <!-- Kategorien als Tags -->
+          <div class="tags-row" *ngIf="photo()?.Kategorien?.length">
+            <span class="tag" *ngFor="let kat of photo()?.Kategorien">{{ kat }}</span>
           </div>
 
-          <div class="pd-specs" *ngIf="specEntries.length">
-            <div class="pd-spec" *ngFor="let spec of specEntries">
-              <i class="ti" [ngClass]="spec.icon"></i>
-              <div>
-                <span class="pd-spec-label">{{ spec.label }}</span>
-                <span class="pd-spec-value">{{ spec.value }}</span>
-              </div>
+          <!-- Location + Datum -->
+          <div class="meta-grid">
+            <div class="meta-item" *ngIf="photo()?.Location">
+              <span class="meta-label"><i class="ti ti-map-pin"></i> Location</span>
+              <span class="meta-value">{{ photo()?.Location }}</span>
+            </div>
+            <div class="meta-item" *ngIf="photo()?.Datum">
+              <span class="meta-label"><i class="ti ti-calendar"></i> Datum</span>
+              <span class="meta-value">{{ photo()?.Datum | date: 'dd.MM.yyyy' }}</span>
             </div>
           </div>
 
-          <div class="pd-date" *ngIf="p.createdAt">
-            <i class="ti ti-calendar"></i>
-            <span>{{ p.createdAt | date: 'dd.MM.yyyy' }}</span>
+          <!-- Kamera -->
+          <div class="camera-section" *ngIf="kameraLabel">
+            <span class="section-label"><i class="ti ti-camera"></i> Kamera</span>
+            <span class="camera-name">{{ kameraLabel }}</span>
           </div>
-        </div>
 
-        <div class="pd-footer">
-          <button
-            class="pd-like-btn"
-            [class.liked]="p.liked"
-            (click)="toggleLike()"
-            [attr.aria-pressed]="p.liked"
-          >
-            <i class="ti" [class.ti-heart]="!p.liked" [class.ti-heart-filled]="p.liked"></i>
-            <span>{{ p.likes }} {{ p.likes === 1 ? 'Like' : 'Likes' }}</span>
-          </button>
+          <!-- Technische Specs -->
+          <div class="specs-section" *ngIf="specItems.length > 0">
+            <span class="section-label"><i class="ti ti-settings"></i> Technische Daten</span>
+            <div class="specs-grid">
+              <div class="spec-chip" *ngFor="let spec of specItems">
+                <span class="spec-label">{{ spec.label }}</span>
+                <span class="spec-value">{{ spec.value }}</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </ng-container>
+
   </div>
 </div>

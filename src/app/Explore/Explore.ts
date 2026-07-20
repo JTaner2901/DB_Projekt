@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, afterNextRender, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Discover, PhotoFilter } from '../Discover/Discover';
@@ -42,17 +42,26 @@ export class Explore implements OnInit {
   currentPage = 1;
   pageSize = 12;
 
-  allPhotos: ExplorePhoto[] = [];
+  allPhotos = signal<ExplorePhoto[]>([]);
   isLoading = false;
   private vorherigeKategorie = ''; // merkt sich den letzten Filterwert unabhängig vom Objekt
 
   // Für das Foto-Detail-Modal
   selectedPhotoId: number | null = null;
 
-  constructor(private api: ApiService, private auth: Auth) {}
+  constructor(private api: ApiService, private auth: Auth) {
+    // Läuft garantiert erst NACH der Hydration im Browser - verhindert,
+    // dass der erste Foto-Request durch SSR/Hydration "verschluckt" wird
+    // und die Seite beim ersten Aufruf leer bleibt, bis man mit dem
+    // Filter interagiert.
+    afterNextRender(() => {
+      this.ladeFotos();
+    });
+  }
 
   ngOnInit(): void {
-    this.ladeFotos();
+    // Absichtlich leer gelassen - das Laden passiert jetzt in afterNextRender()
+    // im Konstruktor, siehe Kommentar dort.
   }
 
   // Lädt Fotos vom Backend. Wenn eine Kategorie ausgewählt ist, filtert
@@ -64,16 +73,18 @@ export class Explore implements OnInit {
 
     this.api.getPhotos(kategorieId).subscribe({
       next: (daten: any[]) => {
-        this.allPhotos = daten.map((p) => ({
-          id: p.photo_Id,
-          url: p.Bildpfad ? `${API_BASE}/${p.Bildpfad}` : 'https://picsum.photos/500/380',
-          photographer: p.Benutzername,
-          likes: p.likes ?? 0,
-          liked: false, // wird erst beim Klick bekannt, siehe toggleLike()
-          location: p.Location || '',
-          kategorienText: p.kategorien || '',
-          tall: false,
-        }));
+        this.allPhotos.set(
+          daten.map((p) => ({
+            id: p.photo_Id,
+            url: p.Bildpfad ? `${API_BASE}/${p.Bildpfad}` : 'https://picsum.photos/500/380',
+            photographer: p.Benutzername,
+            likes: p.likes ?? 0,
+            liked: false, // wird erst beim Klick bekannt, siehe toggleLike()
+            location: p.Location || '',
+            kategorienText: p.kategorien || '',
+            tall: false,
+          }))
+        );
         this.isLoading = false;
       },
       error: (err) => {
@@ -87,7 +98,7 @@ export class Explore implements OnInit {
   // das Backend liefert diese Felder noch nicht pro Foto mit,
   // deshalb greifen diese zwei Filter momentan nicht.
   get filteredPhotos(): ExplorePhoto[] {
-    return this.allPhotos.filter((photo) => {
+    return this.allPhotos().filter((photo) => {
       if (this.filter.location && photo.location !== this.filter.location) return false;
       if (
         this.filter.searchTerm &&
