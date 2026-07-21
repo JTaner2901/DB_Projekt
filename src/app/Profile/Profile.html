@@ -1,43 +1,42 @@
 <div class="profile-page">
-
-  <!-- Cover -->
-  <div class="cover">
-    <img [src]="coverPhoto" alt="Titelbild" />
-  </div>
+  <div class="profile-card">
 
   <!-- Header -->
   <div class="profile-header">
-    <img class="avatar" [src]="avatar" [alt]="name" />
+    <img class="avatar" *ngIf="avatarUrl()" [src]="avatarUrl()" [alt]="benutzername()" />
+    <div class="avatar avatar-fallback" *ngIf="!avatarUrl()">
+      {{ (benutzername() || '?')[0] | uppercase }}
+    </div>
 
     <div class="identity">
-      <h1>{{ name }}</h1>
-      <p class="role">{{ title }}</p>
-      <p class="location"><i class="ti ti-map-pin"></i> {{ location }}</p>
+      <h1>{{ benutzername() }}</h1>
+      <p class="location" *ngIf="location()"><i class="ti ti-map-pin"></i> {{ location() }}</p>
+      <p class="photo-count">{{ photos().length }} {{ photos().length === 1 ? 'Foto' : 'Fotos' }}</p>
     </div>
 
     <div class="header-actions">
-      <button class="follow-btn">Follow</button>
-      <button class="message-btn">Message</button>
+      <a routerLink="/profil-einrichten" class="edit-btn">
+        <i class="ti ti-pencil"></i> Profil bearbeiten
+      </a>
     </div>
   </div>
 
-  <!-- Stats -->
-  <div class="stats-bar">
-    <div class="stat">
-      <span class="label">Total Views</span>
-      <span class="value">{{ stats.views }}</span>
+  <!-- Likes-Übersicht -->
+  <div class="likes-stats">
+    <div class="like-stat-card received">
+      <div class="like-stat-icon">
+        <i class="ti ti-heart-filled"></i>
+      </div>
+      <span class="like-stat-value">{{ likesErhalten() }}</span>
+      <span class="like-stat-label">Likes erhalten</span>
     </div>
-    <div class="stat">
-      <span class="label">Followers</span>
-      <span class="value">{{ stats.followers }}</span>
-    </div>
-    <div class="stat">
-      <span class="label">Following</span>
-      <span class="value">{{ stats.following }}</span>
-    </div>
-    <div class="stat">
-      <span class="label">Photos Shared</span>
-      <span class="value">{{ stats.photosShared }}</span>
+
+    <div class="like-stat-card given">
+      <div class="like-stat-icon">
+        <i class="ti ti-send-2"></i>
+      </div>
+      <span class="like-stat-value">{{ likesGegeben() }}</span>
+      <span class="like-stat-label">Likes vergeben</span>
     </div>
   </div>
 
@@ -58,45 +57,34 @@
 
     <!-- Sidebar -->
     <aside class="sidebar">
-      <h3>Biography</h3>
-      <p class="bio-text">{{ biography }}</p>
+      <h3>Bio</h3>
+      <p class="bio-text" *ngIf="beschreibung()">{{ beschreibung() }}</p>
+      <p class="bio-text muted" *ngIf="!beschreibung()">Noch keine Beschreibung hinterlegt.</p>
 
-      <h3>Camera Bag</h3>
-      <div class="gear-item" *ngFor="let item of gearBag">
-        <i class="ti" [ngClass]="item.icon"></i>
-        <div>
-          <span class="gear-name">{{ item.name }}</span>
-          <span class="gear-subtitle">{{ item.subtitle }}</span>
-        </div>
-      </div>
-
-      <div class="connect-box">
-        <span class="connect-label">Connect</span>
-        <div class="connect-icons">
-          <i class="ti ti-world"></i>
-          <i class="ti ti-share"></i>
-          <i class="ti ti-mail"></i>
-        </div>
+      <div class="meta-item" *ngIf="mitgliedSeit()">
+        <span class="meta-label"><i class="ti ti-calendar"></i> Mitglied seit</span>
+        <span class="meta-value">{{ mitgliedSeit() | date: 'MMMM yyyy' }}</span>
       </div>
     </aside>
 
     <!-- Gallery -->
     <div class="gallery-area">
-      <div class="gallery-grid">
-        <div class="featured-item">
-          <img [src]="featured.url" [alt]="featured.caption" />
-          <div class="featured-caption">
-            <span>{{ name }} · {{ featured.caption }}</span>
-          </div>
-          <div class="featured-date" *ngIf="featured.date">{{ featured.date }}</div>
-        </div>
-
-        <div class="small-item" *ngFor="let photo of galleryPhotos">
-          <img [src]="photo.url" alt="Foto" />
+      <div class="gallery-grid" *ngIf="photos().length > 0">
+        <div
+          class="gallery-item"
+          *ngFor="let photo of photos()"
+          (click)="openPhoto(photo.photo_Id)"
+        >
+          <img [src]="photo.url" [alt]="photo.Titel" />
         </div>
       </div>
 
-      <button class="load-more" (click)="loadMore()">Load More Work</button>
+      <div class="empty-state" *ngIf="!isLoading() && photos().length === 0">
+        <i class="ti ti-photo-off"></i>
+        <h3>Noch keine Fotos</h3>
+        <p>Lade dein erstes Foto hoch und zeig es der Community.</p>
+        <a routerLink="/upload" class="upload-link">Jetzt hochladen</a>
+      </div>
     </div>
 
   </div>
@@ -105,4 +93,11 @@
     <p>{{ activeTab }} - noch keine Daten hinterlegt.</p>
   </div>
 
+  </div>
 </div>
+
+<app-photo-detail
+  [photoId]="selectedPhotoId"
+  (close)="closePhoto()"
+  (photoDeleted)="onPhotoDeleted($event)"
+></app-photo-detail>

@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { GridMotion } from '../GridMotion/GridMotion';
-import { ApiService } from '../services/api.services';
+import { Auth } from '../auth/Auth';
 
 @Component({
   selector: 'app-register',
@@ -12,13 +12,12 @@ import { ApiService } from '../services/api.services';
   styleUrl: './Register.css'
 })
 export class Register {
-  username = '';
   email = '';
   password = '';
   confirmPassword = '';
   errorMessage = '';
 
-  constructor(private api: ApiService, private router: Router) {}
+  constructor(private auth: Auth, private router: Router) {}
 
   onSubmit(): void {
     this.errorMessage = '';
@@ -28,17 +27,14 @@ export class Register {
       return;
     }
 
-    this.api.register({
-      Email: this.email,
-      Benutzername: this.username,
-      Passwort: this.password,
-    }).subscribe({
-      next: () => {
-        // Registrierung erfolgreich -> zur Login-Seite weiterleiten
-        this.router.navigateByUrl('/login');
+    this.auth.register(this.email, this.password).subscribe({
+      next: (antwort) => {
+        // Direkt einloggen - Benutzername ist noch null, das Profil-Setup
+        // übernimmt der Guard automatisch als nächste Seite.
+        this.auth.setEingeloggt(antwort);
+        this.router.navigateByUrl('/profil-einrichten');
       },
       error: (err) => {
-        // z.B. 409, wenn die Email schon vergeben ist (siehe dein Backend)
         this.errorMessage = err.error?.error || 'Registrierung fehlgeschlagen.';
       },
     });

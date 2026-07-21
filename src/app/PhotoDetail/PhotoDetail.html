@@ -38,10 +38,22 @@
             <span>{{ photo()?.Benutzername }}</span>
           </div>
 
-          <button class="like-btn" [class.liked]="liked()" (click)="toggleLike()">
-            <i class="ti" [ngClass]="liked() ? 'ti-heart-filled' : 'ti-heart'"></i>
-            {{ likes() }}
-          </button>
+          <div class="header-actions">
+            <button class="like-btn" [class.liked]="liked()" (click)="toggleLike()">
+              <i class="ti" [ngClass]="liked() ? 'ti-heart-filled' : 'ti-heart'"></i>
+              <span>{{ liked() ? 'Liked' : 'Like' }}</span>
+              <span class="like-count">{{ likes() }}</span>
+            </button>
+
+            <button
+              class="delete-btn"
+              *ngIf="istEigenesFoto"
+              [disabled]="isDeleting()"
+              (click)="deletePhoto()"
+            >
+              <i class="ti ti-trash"></i>
+            </button>
+          </div>
         </div>
 
         <div class="info-body">

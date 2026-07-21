@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 
 interface GalleryPhoto {
   id: number;
@@ -23,8 +24,9 @@ export class Gallery {
     { id: 4, url: 'https://picsum.photos/seed/gal4/500/340', photographer: 'Marco T.', likes: 254, span: 'normal' },
   ];
 
+  constructor(private router: Router) {}
+
   loadMore(): void {
-    // Platzhalter - später per API weitere Fotos nachladen
-    console.log('Load more inspiration...');
+    this.router.navigateByUrl('/explore');
   }
 }

@@ -37,6 +37,11 @@
   font-size: 20px;
 }
 
+.logo-badge img {
+  width: 55%;
+  height: 55%;
+}
+
 .footer-col {
   display: flex;
   flex-direction: column;
@@ -83,7 +88,6 @@
   border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* Projekt-Info */
 .project-info {
   max-width: 1200px;
   margin: 0 auto;
@@ -111,7 +115,6 @@
   color: rgba(255, 255, 255, 0.55);
 }
 
-/* Bottom */
 .footer-bottom {
   max-width: 1200px;
   margin: 0 auto;

@@ -3,11 +3,13 @@ import { CommonModule } from '@angular/common';
 import { forkJoin } from 'rxjs';
 import { ApiService } from '../services/api.services';
 import { Auth } from '../auth/Auth';
+import { bildUrl } from '../shared/bild-url';
 
 const API_BASE = 'http://localhost:3000';
 
 interface PhotoData {
   photo_Id: number;
+  user_Id: number;
   Titel: string;
   Beschreibung: string;
   Datum: string;
@@ -36,6 +38,7 @@ type ModalStatus = 'idle' | 'loading' | 'loaded' | 'error';
 export class PhotoDetail implements OnChanges {
   @Input() photoId: number | null = null;
   @Output() close = new EventEmitter<void>();
+  @Output() photoDeleted = new EventEmitter<number>();
 
   // Alles, was sich async ändert und im Template angezeigt wird, als Signal -
   // behebt zuverlässig Change-Detection-Probleme (siehe NG0100 vorhin bei Discover)
@@ -46,7 +49,7 @@ export class PhotoDetail implements OnChanges {
   liked = signal(false);
   status = signal<ModalStatus>('idle');
 
-  constructor(private api: ApiService, private auth: Auth) {}
+  constructor(private api: ApiService, public auth: Auth) {}
 
   ngOnChanges(): void {
     if (this.photoId) {
@@ -76,33 +79,68 @@ export class PhotoDetail implements OnChanges {
     return items;
   }
 
-private ladeAlles(id: number): void {
-  this.status.set('loading');
-  this.photo.set(null);
-  this.imageUrl.set('');
-  this.imageFailed.set(false);
+  private ladeAlles(id: number): void {
+    this.status.set('loading');
+    this.photo.set(null);
+    this.imageUrl.set('');
+    this.imageFailed.set(false);
 
-  const benutzer = this.auth.currentUser();
+    const benutzer = this.auth.currentUser();
 
-  forkJoin({
-    photo: this.api.getPhoto(id),
-    likesRes: this.api.getLikes(id, benutzer?.user_Id),
-  }).subscribe({
-    next: ({ photo, likesRes }: { photo: PhotoData; likesRes: { likes: number; liked: boolean } }) => {
-      if (this.photoId !== id) return;
+    forkJoin({
+      photo: this.api.getPhoto(id),
+      likesRes: this.api.getLikes(id, benutzer?.user_Id),
+    }).subscribe({
+      next: ({ photo, likesRes }: { photo: PhotoData; likesRes: { likes: number; liked: boolean } }) => {
+        if (this.photoId !== id) return; // veraltete Antwort ignorieren
 
-      this.photo.set(photo);
-      this.imageUrl.set(photo?.Bildpfad ? `${API_BASE}/${photo.Bildpfad}` : '');
-      this.likes.set(likesRes?.likes ?? 0);
-      this.liked.set(likesRes?.liked ?? false);
-      this.status.set('loaded');
-    },
-    error: (err) => {
-      console.error('Foto konnte nicht geladen werden', err);
-      if (this.photoId === id) this.status.set('error');
-    },
-  });
-}
+        this.photo.set(photo);
+        this.imageUrl.set(bildUrl(photo?.Bildpfad));
+        this.likes.set(likesRes?.likes ?? 0);
+        this.liked.set(likesRes?.liked ?? false);
+        this.status.set('loaded');
+      },
+      error: (err) => {
+        console.error('Foto konnte nicht geladen werden', err);
+        if (this.photoId === id) {
+          this.status.set('error');
+        }
+      },
+    });
+  }
+
+  isDeleting = signal(false);
+
+  // Nur true, wenn der eingeloggte Nutzer auch der Besitzer dieses Fotos ist
+  get istEigenesFoto(): boolean {
+    const p = this.photo();
+    const benutzer = this.auth.currentUser();
+    return !!p && !!benutzer && p.user_Id === benutzer.user_Id;
+  }
+
+  deletePhoto(): void {
+    const p = this.photo();
+    const benutzer = this.auth.currentUser();
+    if (!p || !benutzer) return;
+
+    const bestaetigt = confirm('Dieses Foto wirklich unwiderruflich löschen?');
+    if (!bestaetigt) return;
+
+    this.isDeleting.set(true);
+
+    this.api.deletePhoto(p.photo_Id, benutzer.user_Id).subscribe({
+      next: () => {
+        this.isDeleting.set(false);
+        this.photoDeleted.emit(p.photo_Id);
+        this.onClose();
+      },
+      error: (err) => {
+        this.isDeleting.set(false);
+        console.error('Foto konnte nicht gelöscht werden', err);
+        alert(err.error?.error || 'Foto konnte nicht gelöscht werden.');
+      },
+    });
+  }
 
   onImageError(): void {
     this.imageFailed.set(true);

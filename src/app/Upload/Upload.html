@@ -49,21 +49,29 @@
           <textarea [(ngModel)]="description" placeholder="Tell the story behind this shot..." rows="3"></textarea>
         </label>
 
+        <label class="field">
+          <span>Category</span>
+          <select [(ngModel)]="categoryId">
+            <option [ngValue]="null">Select category</option>
+            <option *ngFor="let c of categories()" [ngValue]="c.KategorieID">{{ c.Name }}</option>
+          </select>
+        </label>
+
         <div class="field-row">
           <label class="field">
-            <span>Category</span>
-            <select [(ngModel)]="categoryId">
-              <option [ngValue]="null">Select category</option>
-              <option *ngFor="let c of categories" [ngValue]="c.KategorieID">{{ c.Name }}</option>
-            </select>
+            <span>Stadt</span>
+            <div class="location-input">
+              <input type="text" [(ngModel)]="stadt" placeholder="Ort" />
+              <i class="ti ti-map-pin"></i>
+            </div>
           </label>
 
           <label class="field">
-            <span>Location</span>
-            <div class="location-input">
-              <input type="text" [(ngModel)]="location" placeholder="Vatnajökull, Iceland" />
-              <i class="ti ti-map-pin"></i>
-            </div>
+            <span>Land</span>
+            <select [(ngModel)]="land">
+              <option value="">Bitte wählen</option>
+              <option *ngFor="let l of laender" [value]="l">{{ l }}</option>
+            </select>
           </label>
         </div>
 

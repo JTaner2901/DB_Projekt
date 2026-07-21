@@ -2,11 +2,14 @@ import { Injectable, signal, Inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { ApiService } from '../services/api.services';
 
-// So sieht ein Benutzer aus, wie ihn das Backend beim Login zurückgibt
+// So sieht ein Benutzer aus, wie ihn das Backend zurückgibt.
+// Benutzername ist bewusst nullable - null heißt "Profil-Setup steht noch aus".
 export interface AktuellerBenutzer {
   user_Id: number;
-  Benutzername: string;
+  Benutzername: string | null;
   Email: string;
+  Beschreibung?: string | null;
+  Profilbildpfad?: string | null;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -21,8 +24,6 @@ export class Auth {
   ) {
     this.isBrowser = isPlatformBrowser(platformId);
 
-    // Beim Neuladen der Seite prüfen, ob vorher schon jemand eingeloggt war
-    // (nur im Browser möglich, nicht beim Server-Side-Rendering)
     if (this.isBrowser) {
       const gespeichert = localStorage.getItem('currentUser');
       if (gespeichert) {
@@ -32,19 +33,28 @@ export class Auth {
     }
   }
 
-  // Gibt ein Observable zurück – die Komponente entscheidet, was bei
-  // Erfolg/Fehler passiert (z.B. weiterleiten oder Fehlermeldung zeigen).
   login(email: string, password: string) {
     return this.api.login({ Email: email, Passwort: password });
   }
 
-  // Wird von der Login-Komponente aufgerufen, NACHDEM die API erfolgreich geantwortet hat
+  register(email: string, password: string) {
+    return this.api.register({ Email: email, Passwort: password });
+  }
+
+  // Wird nach erfolgreichem Login ODER erfolgreicher Registrierung
+  // ODER nach Profil-Setup aufgerufen - aktualisiert immer den gespeicherten Stand.
   setEingeloggt(benutzer: AktuellerBenutzer): void {
     this.currentUser.set(benutzer);
     this.isLoggedIn.set(true);
     if (this.isBrowser) {
       localStorage.setItem('currentUser', JSON.stringify(benutzer));
     }
+  }
+
+  // Praktisch fürs Route-Guard: true, wenn eingeloggt aber Benutzername fehlt
+  benoetigtProfilSetup(): boolean {
+    const user = this.currentUser();
+    return this.isLoggedIn() && !!user && !user.Benutzername;
   }
 
   logout(): void {

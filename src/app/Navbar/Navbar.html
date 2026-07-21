@@ -1,6 +1,6 @@
 <nav class="navbar">
   <a routerLink="/" class="logo">
-    <i class="ti ti-aperture"></i>
+    <img src="/icon/capture-frames-icon.svg" alt="Capture Frames Logo" />
   </a>
 
   <span class="brand">Capture Frames</span>
@@ -25,7 +25,8 @@
 
     <div class="profile-area" *ngIf="auth.isLoggedIn()">
       <button class="avatar-btn" (click)="toggleDropdown()">
-        <img src="https://picsum.photos/seed/avatar/60/60" alt="Profilbild" />
+        <img *ngIf="avatarUrl" [src]="avatarUrl" alt="Profilbild" />
+        <span *ngIf="!avatarUrl" class="avatar-fallback">{{ initial }}</span>
       </button>
 
       <div class="dropdown" *ngIf="isDropdownOpen">

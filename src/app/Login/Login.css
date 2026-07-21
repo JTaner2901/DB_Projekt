@@ -12,13 +12,18 @@
   width: 52px;
   height: 52px;
   border-radius: 50%;
-  background: var(--color-primary);
+  background: #14151a;
   color: #ffffff;
   font-size: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
   margin: 0 auto 20px;
+}
+
+.logo-badge img {
+  width: 55%;
+  height: 55%;
 }
 
 .login-card h1 {
@@ -67,7 +72,7 @@ label input:focus {
   padding: 12px;
   border: none;
   border-radius: 8px;
-  background: var(--color-primary);
+  background: #14151a;
   color: #ffffff;
   font-size: 14px;
   font-weight: 600;
@@ -75,7 +80,7 @@ label input:focus {
 }
 
 .submit-btn:hover {
-  background: var(--color-primary-hover);
+  background: #2a2b32;
 }
 
 .switch-link {

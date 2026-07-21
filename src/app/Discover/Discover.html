@@ -11,8 +11,8 @@
 
       <div class="filter-pill">
         <select [(ngModel)]="filter.location" (ngModelChange)="onFilterChange()">
-          <option value="">Location</option>
-          <option *ngFor="let l of locations" [value]="l">{{ l }}</option>
+          <option value="">Land</option>
+          <option *ngFor="let l of laender" [value]="l">{{ l }}</option>
         </select>
         <i class="ti ti-chevron-down"></i>
       </div>

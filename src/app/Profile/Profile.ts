@@ -1,74 +1,101 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
+import { ApiService } from '../services/api.services';
+import { Auth } from '../auth/Auth';
+import { PhotoDetail } from '../PhotoDetail/PhotoDetail';
+import { bildUrl } from '../shared/bild-url';
 
-interface GearItem {
-  icon: string;
-  name: string;
-  subtitle: string;
-}
+const API_BASE = 'http://localhost:3000';
 
-interface GalleryItem {
+interface EigenesFoto {
+  photo_Id: number;
+  Titel: string;
   url: string;
-  caption?: string;
-  date?: string;
-  tall?: boolean;
 }
 
 @Component({
   selector: 'app-profile',
-  imports: [CommonModule],
+  imports: [CommonModule, RouterLink, PhotoDetail],
   templateUrl: './Profile.html',
   styleUrl: './Profile.css'
 })
-export class Profile {
-  // Platzhalter - später aus der DB laden, sobald Profile-API steht
-  coverPhoto = 'https://picsum.photos/seed/profile-cover/1200/500';
-  avatar = 'https://picsum.photos/seed/profile-avatar/200/200';
+export class Profile implements OnInit {
+  benutzername = signal('');
+  beschreibung = signal<string | null>(null);
+  location = signal<string | null>(null);
+  avatarUrl = signal<string | null>(null);
+  mitgliedSeit = signal<string | null>(null);
 
-  name = 'Julian Thorne';
-  title = 'Landscape & Travel Photographer';
-  location = 'Reykjavík, Iceland';
+  photos = signal<EigenesFoto[]>([]);
+  isLoading = signal(true);
 
-  stats = {
-    views: '1.2M',
-    followers: '42.8K',
-    following: '842',
-    photosShared: '156',
-  };
-
-  biography = 'Specializing in high-altitude landscapes and the ethereal quality of Arctic light. My work explores the intersection of vast scale and intimate detail in the natural world. Based in Iceland, traveling globally.';
-
-  gearBag: GearItem[] = [
-    { icon: 'ti-camera', name: 'Sony A7R IV', subtitle: 'Primary Body' },
-    { icon: 'ti-aperture', name: '35mm f/1.4 GM', subtitle: 'Wide Landscapes' },
-    { icon: 'ti-aperture', name: '70-200mm f/2.8 OSS II', subtitle: 'Compressed Landscapes' },
-    { icon: 'ti-filter', name: 'PolarPro QuartzLine', subtitle: 'ND & PL Filters' },
-  ];
+  likesErhalten = signal(0);
+  likesGegeben = signal(0);
 
   tabs = ['Gallery', 'Collections', 'About', 'Appreciations'];
   activeTab = 'Gallery';
 
-  featured: GalleryItem = {
-    url: 'https://picsum.photos/seed/profile-featured/500/700',
-    caption: 'Winter Solitude',
-    date: 'June 21st',
-    tall: true,
-  };
+  selectedPhotoId: number | null = null;
 
-  galleryPhotos: GalleryItem[] = [
-    { url: 'https://picsum.photos/seed/profile-g1/400/260' },
-    { url: 'https://picsum.photos/seed/profile-g2/400/260' },
-    { url: 'https://picsum.photos/seed/profile-g3/400/260' },
-    { url: 'https://picsum.photos/seed/profile-g4/400/260' },
-    { url: 'https://picsum.photos/seed/profile-g5/400/260' },
-  ];
+  constructor(private api: ApiService, private auth: Auth) {}
+
+  ngOnInit(): void {
+    const benutzer = this.auth.currentUser();
+    if (!benutzer) return;
+
+    // Vollständiges Profil aus der DB laden - Location/Bio/Profilbild/
+    // Registrierungsdatum stehen nicht alle in der Login-Session
+    this.api.getUser(benutzer.user_Id).subscribe({
+      next: (daten) => {
+        this.benutzername.set(daten.Benutzername);
+        this.beschreibung.set(daten.Beschreibung);
+        this.location.set(daten.Location);
+        this.mitgliedSeit.set(daten.Registrierungsdatum);
+        this.avatarUrl.set(bildUrl(daten.Profilbildpfad));
+      },
+      error: (err) => console.error('Profil konnte nicht geladen werden', err),
+    });
+
+    this.api.getPhotosByUser(benutzer.user_Id).subscribe({
+      next: (daten: any[]) => {
+        this.photos.set(
+          daten.map((p) => ({
+            photo_Id: p.photo_Id,
+            Titel: p.Titel,
+            url: bildUrl(p.Bildpfad),
+          }))
+        );
+        this.isLoading.set(false);
+      },
+      error: (err) => {
+        console.error('Fotos konnten nicht geladen werden', err);
+        this.isLoading.set(false);
+      },
+    });
+
+    this.api.getLikesSummary(benutzer.user_Id).subscribe({
+      next: (daten: { erhalten: number; gegeben: number }) => {
+        this.likesErhalten.set(daten.erhalten);
+        this.likesGegeben.set(daten.gegeben);
+      },
+      error: (err) => console.error('Likes-Übersicht konnte nicht geladen werden', err),
+    });
+  }
 
   setTab(tab: string): void {
     this.activeTab = tab;
   }
 
-  loadMore(): void {
-    // Platzhalter - später Pagination per API
-    console.log('Weitere Fotos laden...');
+  openPhoto(photoId: number): void {
+    this.selectedPhotoId = photoId;
+  }
+
+  closePhoto(): void {
+    this.selectedPhotoId = null;
+  }
+
+  onPhotoDeleted(photoId: number): void {
+    this.photos.update((liste) => liste.filter((p) => p.photo_Id !== photoId));
   }
 }
