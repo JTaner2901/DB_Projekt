@@ -1,8 +1,13 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ApiService } from '../services/api.services';
+import { PhotoDetail } from '../PhotoDetail/PhotoDetail';
+import { bildUrl } from '../shared/bild-url';
+
+const API_BASE = 'http://localhost:3000';
 
 interface TopPhoto {
-  id: number;
+  id: number | null; // null = Easter Egg, kein echtes DB-Foto
   url: string;
   photographer: string;
   likes: number;
@@ -10,32 +15,72 @@ interface TopPhoto {
 
 @Component({
   selector: 'app-top-photos',
-  imports: [CommonModule],
+  imports: [CommonModule, PhotoDetail],
   templateUrl: './TopPhotos.html',
   styleUrl: './TopPhotos.css'
 })
-export class TopPhotos {
-  photos: TopPhoto[] = [
-    { id: 1, url: 'https://picsum.photos/seed/capture1/500/650', photographer: 'Lena K.', likes: 342 },
-    { id: 2, url: 'https://picsum.photos/seed/capture2/500/650', photographer: 'Tom R.', likes: 218 },
-    { id: 3, url: 'https://picsum.photos/seed/capture3/500/650', photographer: 'Mira S.', likes: 501 },
-    { id: 4, url: 'https://picsum.photos/seed/capture4/500/650', photographer: 'Jonas W.', likes: 176 },
-    { id: 5, url: 'https://picsum.photos/seed/capture5/500/650', photographer: 'Ayla D.', likes: 389 },
-    { id: 6, url: '/easteregg/Fyni.JPEG', photographer: 'Fyn P.', likes: 264 },
-  ];
-
+export class TopPhotos implements OnInit {
+  photos = signal<TopPhoto[]>([]);
   centerIndex = 2;
+  selectedPhotoId: number | null = null;
+
+  constructor(private api: ApiService) {}
+
+  ngOnInit(): void {
+    // Alle Fotos holen (liefert schon die Like-Anzahl pro Foto mit),
+    // client-seitig nach Likes sortieren und die Top 5 nehmen
+    this.api.getPhotos().subscribe({
+      next: (daten: any[]) => {
+        const topFotos: TopPhoto[] = [...daten]
+          .sort((a, b) => (b.likes ?? 0) - (a.likes ?? 0))
+          .slice(0, 5)
+          .map((p) => ({
+            id: p.photo_Id,
+            url: bildUrl(p.Bildpfad) || 'https://picsum.photos/500/650',
+            photographer: p.Benutzername,
+            likes: p.likes ?? 0,
+          }));
+
+        // Easter Egg bleibt fest mit drin, ist kein echtes Foto aus der DB
+        topFotos.push({
+          id: null,
+          url: '/easteregg/Fyni.JPEG',
+          photographer: 'Fyni',
+          likes: 0,
+        });
+
+        this.photos.set(topFotos);
+      },
+      error: (err) => console.error('Top-Fotos konnten nicht geladen werden', err),
+    });
+  }
 
   prev(): void {
     this.centerIndex = Math.max(0, this.centerIndex - 1);
   }
 
   next(): void {
-    this.centerIndex = Math.min(this.photos.length - 1, this.centerIndex + 1);
+    this.centerIndex = Math.min(this.photos().length - 1, this.centerIndex + 1);
   }
 
   goTo(index: number): void {
     this.centerIndex = index;
+  }
+
+  // Öffnet das PhotoDetail-Modal - nur für echte Fotos (das Easter Egg hat
+  // keine echte photo_Id und lässt sich deshalb nicht öffnen)
+  openPhoto(photo: TopPhoto): void {
+    if (photo.id) {
+      this.selectedPhotoId = photo.id;
+    }
+  }
+
+  closePhoto(): void {
+    this.selectedPhotoId = null;
+  }
+
+  onPhotoDeleted(photoId: number): void {
+    this.photos.update((liste) => liste.filter((p) => p.id !== photoId));
   }
 
   getCardStyle(index: number): Record<string, string> {

@@ -12,10 +12,10 @@
     <div class="stage">
       <div
         class="photo-card"
-        *ngFor="let photo of photos; let i = index"
+        *ngFor="let photo of photos(); let i = index"
         [ngStyle]="getCardStyle(i)"
         [class.active]="i === centerIndex"
-        (click)="goTo(i)"
+        (click)="i === centerIndex ? openPhoto(photo) : goTo(i)"
       >
         <img [src]="photo.url" [alt]="'Foto von ' + photo.photographer" />
 
@@ -26,7 +26,7 @@
 
         <div class="info">
           <span class="photographer">{{ photo.photographer }}</span>
-          <span class="likes"><i class="ti ti-heart"></i> {{ photo.likes }}</span>
+          <span class="likes" *ngIf="photo.id"><i class="ti ti-heart"></i> {{ photo.likes }}</span>
         </div>
       </div>
     </div>
@@ -36,3 +36,9 @@
     </button>
   </div>
 </section>
+
+<app-photo-detail
+  [photoId]="selectedPhotoId"
+  (close)="closePhoto()"
+  (photoDeleted)="onPhotoDeleted($event)"
+></app-photo-detail>

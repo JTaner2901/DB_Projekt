@@ -1,24 +1,13 @@
 <app-grid-motion gradientColor="#0093a5">
   <div class="register-card">
     <div class="logo-badge">
-      <i class="ti ti-aperture"></i>
+      <img src="/icon/capture-frames-icon-white.svg" alt="Capture Frames Logo" />
     </div>
 
     <h1>Konto erstellen</h1>
     <p class="subtitle">Werde Teil der Capture Frames Community</p>
 
     <form (ngSubmit)="onSubmit()">
-      <label>
-        <span>Nutzername</span>
-        <input
-          type="text"
-          [(ngModel)]="username"
-          name="username"
-          placeholder="dein_name"
-          required
-        />
-      </label>
-
       <label>
         <span>E-Mail</span>
         <input
@@ -53,6 +42,7 @@
       </label>
 
       <button type="submit" class="submit-btn">Registrieren</button>
+
       <p class="error-message" *ngIf="errorMessage">{{ errorMessage }}</p>
     </form>
 

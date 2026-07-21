@@ -97,4 +97,8 @@
 
 </div>
 
-<app-photo-detail [photoId]="selectedPhotoId" (close)="closePhoto()"></app-photo-detail>
+<app-photo-detail
+  [photoId]="selectedPhotoId"
+  (close)="closePhoto()"
+  (photoDeleted)="onPhotoDeleted($event)"
+></app-photo-detail>

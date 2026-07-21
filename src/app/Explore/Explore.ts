@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Discover, PhotoFilter } from '../Discover/Discover';
 import { ApiService } from '../services/api.services';
 import { Auth } from '../auth/Auth';
+import { bildUrl } from '../shared/bild-url';
 import { PhotoDetail } from '../PhotoDetail/PhotoDetail';
 
 // So sieht ein Foto aus, wie es das Backend jetzt liefert
@@ -76,7 +77,7 @@ export class Explore implements OnInit {
         this.allPhotos.set(
           daten.map((p) => ({
             id: p.photo_Id,
-            url: p.Bildpfad ? `${API_BASE}/${p.Bildpfad}` : 'https://picsum.photos/500/380',
+            url: bildUrl(p.Bildpfad) || 'https://picsum.photos/500/380',
             photographer: p.Benutzername,
             likes: p.likes ?? 0,
             liked: false, // wird erst beim Klick bekannt, siehe toggleLike()
@@ -97,14 +98,24 @@ export class Explore implements OnInit {
   // Kamera und Specs sind aktuell client-seitige Platzhalter-Filter:
   // das Backend liefert diese Felder noch nicht pro Foto mit,
   // deshalb greifen diese zwei Filter momentan nicht.
+  //
+  // location ist jetzt ein LAND, aber photo.location ist ein zusammengesetzter
+  // "Stadt, Land"-String - deshalb hier ein Substring-Match (includes) statt
+  // exaktem Vergleich, sonst würde der Filter nie etwas finden.
   get filteredPhotos(): ExplorePhoto[] {
     return this.allPhotos().filter((photo) => {
-      if (this.filter.location && photo.location !== this.filter.location) return false;
       if (
-        this.filter.searchTerm &&
-        !photo.photographer.toLowerCase().includes(this.filter.searchTerm.toLowerCase())
+        this.filter.location &&
+        !photo.location?.toLowerCase().includes(this.filter.location.toLowerCase())
       ) {
         return false;
+      }
+      if (this.filter.searchTerm) {
+        const begriff = this.filter.searchTerm.toLowerCase();
+        const treffer =
+          photo.photographer.toLowerCase().includes(begriff) ||
+          photo.location?.toLowerCase().includes(begriff);
+        if (!treffer) return false;
       }
       return true;
     });
@@ -202,5 +213,10 @@ export class Explore implements OnInit {
 
   closePhoto(): void {
     this.selectedPhotoId = null;
+  }
+
+  // Entfernt das gelöschte Foto sofort aus der Liste, ohne die Seite neu zu laden
+  onPhotoDeleted(photoId: number): void {
+    this.allPhotos.update((liste) => liste.filter((p) => p.id !== photoId));
   }
 }

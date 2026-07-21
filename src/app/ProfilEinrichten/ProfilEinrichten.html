@@ -1,0 +1,64 @@
+<div class="setup-page">
+  <div class="setup-card">
+    <h1>Willkommen bei Capture Frames</h1>
+    <p class="subtitle">Nur noch ein Schritt, dann bist du startklar</p>
+
+    <form (ngSubmit)="onSubmit()">
+      <label class="avatar-upload">
+        <div class="avatar-circle">
+          <img *ngIf="avatarPreview" [src]="avatarPreview" alt="Profilbild-Vorschau" />
+          <i *ngIf="!avatarPreview" class="ti ti-camera-plus"></i>
+        </div>
+        <span class="avatar-hint">Profilbild hinzufügen (optional)</span>
+        <input type="file" accept="image/*" (change)="onAvatarSelected($event)" hidden />
+      </label>
+
+      <label class="field">
+        <span>Benutzername <span class="required">*</span></span>
+        <input
+          type="text"
+          [(ngModel)]="benutzername"
+          name="benutzername"
+          placeholder="dein_name"
+          required
+        />
+      </label>
+
+      <div class="field-row">
+        <label class="field">
+          <span>Stadt <span class="optional">(optional)</span></span>
+          <input
+            type="text"
+            [(ngModel)]="stadt"
+            name="stadt"
+            placeholder="Bremen"
+          />
+        </label>
+
+        <label class="field">
+          <span>Land <span class="optional">(optional)</span></span>
+          <select [(ngModel)]="land" name="land">
+            <option value="">Bitte wählen</option>
+            <option *ngFor="let l of laender" [value]="l">{{ l }}</option>
+          </select>
+        </label>
+      </div>
+
+      <label class="field">
+        <span>Über dich <span class="optional">(optional)</span></span>
+        <textarea
+          [(ngModel)]="beschreibung"
+          name="beschreibung"
+          placeholder="Erzähl kurz etwas über dich und deine Fotografie..."
+          rows="3"
+        ></textarea>
+      </label>
+
+      <button type="submit" class="submit-btn" [disabled]="isSaving">
+        {{ isSaving ? 'Wird gespeichert...' : 'Fertig' }}
+      </button>
+
+      <p class="error-message" *ngIf="errorMessage">{{ errorMessage }}</p>
+    </form>
+  </div>
+</div>

@@ -1,7 +1,7 @@
-<app-grid-motion gradientColor="#14151a">
+<app-grid-motion gradientColor="#0093a5">
   <div class="login-card">
     <div class="logo-badge">
-      <i class="ti ti-aperture"></i>
+      <img src="/icon/capture-frames-icon-white.svg" alt="Capture Frames Logo" />
     </div>
 
     <h1>Willkommen zurück</h1>
@@ -9,12 +9,12 @@
 
     <form (ngSubmit)="onSubmit()">
       <label>
-        <span>E-Mail</span>
+        <span>Benutzername</span>
         <input
-          type="email"
+          type="text"
           [(ngModel)]="email"
           name="email"
-          placeholder="du@beispiel.de"
+          placeholder="taner"
           required
         />
       </label>

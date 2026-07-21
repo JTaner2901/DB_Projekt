@@ -2,10 +2,13 @@ import { Component, EventEmitter, OnInit, Output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { ApiService } from '../services/api.services';
+import { LAENDER } from '../shared/laender';
 
 // category ist jetzt die KategorieID (Zahl) als String im Filter-Objekt,
 // oder '' wenn keine Kategorie gewählt ist. So passt es exakt zu dem,
 // was das Backend bei ?kategorie=<ID> erwartet.
+// location ist jetzt ein LAND (nicht mehr eine feste Stadt) - siehe
+// Erklärung im Chat, warum das umgestellt wurde.
 export interface PhotoFilter {
   camera: string;
   location: string;
@@ -29,11 +32,13 @@ interface Kategorie {
 export class Discover implements OnInit {
   @Output() filterChange = new EventEmitter<PhotoFilter>();
 
-  // Kamera/Location/Specs bleiben vorerst als feste Auswahl, weil das
-  // Backend diese Werte noch nicht mitliefert (siehe Erklärung im Chat)
+  // Kamera/Specs bleiben vorerst als feste Auswahl, weil das Backend
+  // diese Werte noch nicht pro Foto mitliefert (siehe Erklärung im Chat)
   cameras: string[] = ['Canon EOS R5', 'Sony A7 IV', 'Nikon Z6', 'Fujifilm X-T5'];
-  locations: string[] = ['Bremen', 'Berlin', 'Hamburg', 'München'];
   specs: string[] = ['f/1.4 - f/2.8', 'f/4 - f/8', 'ISO 100-400', 'ISO 800+'];
+
+  // Länder statt fester Städte - passend zu Stadt+Land beim Upload
+  laender = LAENDER;
 
   filter: PhotoFilter = {
     camera: '',
@@ -44,8 +49,7 @@ export class Discover implements OnInit {
   };
 
   // Echte Kategorien aus der Datenbank - als Signal, damit Angular
-  // Änderungen zuverlässig erkennt (behebt NG0100 ExpressionChangedAfterItHasBeenChecked,
-  // das auftrat, wenn die Antwort sehr schnell/synchron aus dem Cache kam)
+  // Änderungen zuverlässig erkennt
   categories = signal<Kategorie[]>([]);
 
   constructor(private api: ApiService) {}

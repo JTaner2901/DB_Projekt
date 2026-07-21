@@ -1,0 +1,19 @@
+<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <!-- Sucher-Eckklammern -->
+  <g stroke="#ffffff" stroke-width="5" stroke-linecap="round" fill="none">
+    <path d="M8 28 L8 8 L28 8" />
+    <path d="M72 8 L92 8 L92 28" />
+    <path d="M92 72 L92 92 L72 92" />
+    <path d="M28 92 L8 92 L8 72" />
+  </g>
+
+  <!-- Aperture-Iris (6 Blenden-Blätter) -->
+  <g fill="#ffffff">
+    <path d="M58 50 L81.06 36.17 L81.06 63.83 Z" />
+    <path d="M54 56.93 L77.51 69.99 L53.55 83.81 Z" />
+    <path d="M46 56.93 L46.45 83.81 L22.49 69.99 Z" />
+    <path d="M42 50 L18.94 63.83 L18.94 36.17 Z" />
+    <path d="M46 43.07 L22.49 30.01 L46.45 16.19 Z" />
+    <path d="M54 43.07 L53.55 16.19 L77.51 30.01 Z" />
+  </g>
+</svg>
