@@ -230,6 +230,28 @@ app.post('/api/photos', upload.single('bild'), async (req, res) => {
     }
 
     await conn.commit();
+
+    // Neues Foto per WebSocket an alle Clients melden, z.B. damit
+    // die Gallery/Discover-Ansicht das Foto live einblendet, ohne neu zu laden.
+    try {
+      const [neuesFotoRows] = await pool.query(`
+        SELECT p.photo_Id, p.Titel, p.Beschreibung, p.Datum, p.Location, p.Bildpfad,
+              b.Benutzername,
+              0 AS likes
+        FROM Photo p
+        JOIN Benutzer b ON p.user_Id = b.user_Id
+        WHERE p.photo_Id = ?
+      `, [photoId]);
+
+      broadcast({
+        type: 'new-photo',
+        photo: neuesFotoRows[0],
+      });
+    } catch (broadcastErr) {
+      // Broadcast-Fehler dürfen die eigentliche Antwort nicht verhindern
+      console.error('WebSocket-Broadcast fehlgeschlagen:', broadcastErr);
+    }
+
     res.status(201).json({ photo_Id: photoId, message: 'Foto gespeichert' });
   } catch (err) {
     await conn.rollback();
@@ -279,26 +301,21 @@ app.post('/api/auth/login', async (req, res) => {
   const { Email, Passwort } = req.body;
 
   if (!Email || !Passwort) {
-    return res.status(400).json({ error: 'Email/Benutzername und Passwort sind Pflicht' });
+    return res.status(400).json({ error: 'Email und Passwort sind Pflicht' });
   }
 
   try {
-    // Erlaubt Login sowohl per Email als auch per Benutzername -
-    // "Email" heißt hier einfach nur "das, was der Nutzer eingegeben hat"
-    const [rows] = await pool.query(
-      'SELECT * FROM Benutzer WHERE Email = ? OR Benutzername = ?',
-      [Email, Email]
-    );
+    const [rows] = await pool.query('SELECT * FROM Benutzer WHERE Email = ?', [Email]);
 
     if (rows.length === 0) {
-      return res.status(401).json({ error: 'Zugangsdaten falsch' });
+      return res.status(401).json({ error: 'Email oder Passwort falsch' });
     }
 
     const benutzer = rows[0];
     const passwortStimmt = await bcrypt.compare(Passwort, benutzer.Passwort);
 
     if (!passwortStimmt) {
-      return res.status(401).json({ error: 'Zugangsdaten falsch' });
+      return res.status(401).json({ error: 'Email oder Passwort falsch' });
     }
 
     res.json({
@@ -329,6 +346,26 @@ app.post('/api/photos/:id/comments', async (req, res) => {
       'INSERT INTO Kommentar (user_Id, photo_Id, Text) VALUES (?, ?, ?)',
       [user_Id, photoId, Text]
     );
+
+    // Neuen Kommentar per WebSocket an alle Clients melden,
+    // damit die PhotoDetail-Ansicht ihn live einblenden kann.
+    try {
+      const [neuerKommentar] = await pool.query(`
+        SELECT k.kommentar_Id, k.Text, k.Datum, b.Benutzername
+        FROM Kommentar k
+        JOIN Benutzer b ON k.user_Id = b.user_Id
+        WHERE k.kommentar_Id = ?
+      `, [result.insertId]);
+
+      broadcast({
+        type: 'new-comment',
+        photo_Id: Number(photoId),
+        comment: neuerKommentar[0],
+      });
+    } catch (broadcastErr) {
+      console.error('WebSocket-Broadcast fehlgeschlagen:', broadcastErr);
+    }
+
     res.status(201).json({ kommentar_Id: result.insertId, message: 'Kommentar gespeichert' });
   } catch (err) {
     console.error(err);
@@ -510,6 +547,14 @@ app.delete('/api/photos/:id', async (req, res) => {
     await conn.query('DELETE FROM Photo WHERE photo_Id = ?', [photoId]);
 
     await conn.commit();
+
+    // Löschung per WebSocket an alle Clients melden, damit das Foto
+    // sofort aus Gallery/Discover/Profil verschwindet.
+    broadcast({
+      type: 'photo-deleted',
+      photo_Id: Number(photoId),
+    });
+
     res.json({ message: 'Foto gelöscht' });
   } catch (err) {
     await conn.rollback();
