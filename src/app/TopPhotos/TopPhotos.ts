@@ -1,6 +1,8 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Subscription } from 'rxjs';
 import { ApiService } from '../services/api.services';
+import { WebsocketService, WsMessage } from '../services/websocket.service';
 import { PhotoDetail } from '../PhotoDetail/PhotoDetail';
 import { bildUrl } from '../shared/bild-url';
 
@@ -19,12 +21,17 @@ interface TopPhoto {
   templateUrl: './TopPhotos.html',
   styleUrl: './TopPhotos.css'
 })
-export class TopPhotos implements OnInit {
+export class TopPhotos implements OnInit, OnDestroy {
   photos = signal<TopPhoto[]>([]);
   centerIndex = 2;
   selectedPhotoId: number | null = null;
 
-  constructor(private api: ApiService) {}
+  private wsSubscription?: Subscription;
+
+  constructor(
+    private api: ApiService,
+    private ws: WebsocketService,
+  ) {}
 
   ngOnInit(): void {
     // Alle Fotos holen (liefert schon die Like-Anzahl pro Foto mit),
@@ -53,6 +60,30 @@ export class TopPhotos implements OnInit {
       },
       error: (err) => console.error('Top-Fotos konnten nicht geladen werden', err),
     });
+
+    // Live-Updates: Likes eines sichtbaren Fotos aktualisieren, geloeschte Fotos rausnehmen.
+    // (Neu-Sortierung bei Like-Aenderungen bewusst weggelassen, damit die Karten
+    // nicht ploetzlich waehrend des Anschauens durcheinanderspringen.)
+    this.ws.connect();
+    this.wsSubscription = this.ws.messages.subscribe((msg) => this.handleWsMessage(msg));
+  }
+
+  ngOnDestroy(): void {
+    this.wsSubscription?.unsubscribe();
+  }
+
+  private handleWsMessage(msg: WsMessage): void {
+    switch (msg.type) {
+      case 'like-update':
+        this.photos.update((liste) =>
+          liste.map((p) => (p.id === msg.photo_Id ? { ...p, likes: msg.likes } : p))
+        );
+        break;
+
+      case 'photo-deleted':
+        this.onPhotoDeleted(msg.photo_Id);
+        break;
+    }
   }
 
   prev(): void {

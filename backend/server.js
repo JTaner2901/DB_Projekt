@@ -301,26 +301,21 @@ app.post('/api/auth/login', async (req, res) => {
   const { Email, Passwort } = req.body;
 
   if (!Email || !Passwort) {
-    return res.status(400).json({ error: 'Email/Benutzername und Passwort sind Pflicht' });
+    return res.status(400).json({ error: 'Email und Passwort sind Pflicht' });
   }
 
   try {
-    // Erlaubt Login sowohl per Email als auch per Benutzername -
-    // "Email" heißt hier einfach nur "das, was der Nutzer eingegeben hat"
-    const [rows] = await pool.query(
-      'SELECT * FROM Benutzer WHERE Email = ? OR Benutzername = ?',
-      [Email, Email]
-    );
+    const [rows] = await pool.query('SELECT * FROM Benutzer WHERE Email = ?', [Email]);
 
     if (rows.length === 0) {
-      return res.status(401).json({ error: 'Zugangsdaten falsch' });
+      return res.status(401).json({ error: 'Email oder Passwort falsch' });
     }
 
     const benutzer = rows[0];
     const passwortStimmt = await bcrypt.compare(Passwort, benutzer.Passwort);
 
     if (!passwortStimmt) {
-      return res.status(401).json({ error: 'Zugangsdaten falsch' });
+      return res.status(401).json({ error: 'Email oder Passwort falsch' });
     }
 
     res.json({
