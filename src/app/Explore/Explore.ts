@@ -8,7 +8,7 @@ import { bildUrl } from '../shared/bild-url';
 import { PhotoDetail } from '../PhotoDetail/PhotoDetail';
 
 // So sieht ein Foto aus, wie es das Backend jetzt liefert
-// (nach der Erweiterung von GET /api/photos um likes + kategorien)
+// (nach der Erweiterung von GET /api/photos um likes, Hersteller, tagsText)
 interface ExplorePhoto {
   id: number;
   url: string;
@@ -16,11 +16,11 @@ interface ExplorePhoto {
   likes: number;
   liked: boolean;      // hat der EINGELOGGTE Nutzer dieses Foto geliked?
   location: string;
+  kamera: string;       // Kamera-Hersteller, z.B. "Apple" - für den Kamera-Filter
+  tagsText: string;     // z.B. "sonnenuntergang, meer" - für die Tag-Suche
   kategorienText: string; // z.B. "Natur, Kunst" - nur zur Anzeige
   tall?: boolean;
 }
-
-const API_BASE = 'http://localhost:3000';
 
 @Component({
   selector: 'app-explore',
@@ -32,7 +32,6 @@ export class Explore implements OnInit {
   filter: PhotoFilter = {
     camera: '',
     location: '',
-    specs: '',
     category: '',
     searchTerm: '',
   };
@@ -82,6 +81,8 @@ export class Explore implements OnInit {
             likes: p.likes ?? 0,
             liked: false, // wird erst beim Klick bekannt, siehe toggleLike()
             location: p.Location || '',
+            kamera: p.Hersteller || '',
+            tagsText: p.tagsText || '',
             kategorienText: p.kategorien || '',
             tall: false,
           }))
@@ -95,15 +96,19 @@ export class Explore implements OnInit {
     });
   }
 
-  // Kamera und Specs sind aktuell client-seitige Platzhalter-Filter:
-  // das Backend liefert diese Felder noch nicht pro Foto mit,
-  // deshalb greifen diese zwei Filter momentan nicht.
+  // Kamera filtert jetzt echt (Hersteller, exakter Vergleich - die Werte
+  // kommen ja aus einem Dropdown, keine Tippfehler möglich).
   //
-  // location ist jetzt ein LAND, aber photo.location ist ein zusammengesetzter
+  // location ist ein LAND, aber photo.location ist ein zusammengesetzter
   // "Stadt, Land"-String - deshalb hier ein Substring-Match (includes) statt
   // exaktem Vergleich, sonst würde der Filter nie etwas finden.
+  //
+  // Die Suche durchsucht jetzt Fotograf, Location UND Tags.
   get filteredPhotos(): ExplorePhoto[] {
     return this.allPhotos().filter((photo) => {
+      if (this.filter.camera && photo.kamera !== this.filter.camera) {
+        return false;
+      }
       if (
         this.filter.location &&
         !photo.location?.toLowerCase().includes(this.filter.location.toLowerCase())
@@ -114,7 +119,8 @@ export class Explore implements OnInit {
         const begriff = this.filter.searchTerm.toLowerCase();
         const treffer =
           photo.photographer.toLowerCase().includes(begriff) ||
-          photo.location?.toLowerCase().includes(begriff);
+          photo.location?.toLowerCase().includes(begriff) ||
+          photo.tagsText?.toLowerCase().includes(begriff);
         if (!treffer) return false;
       }
       return true;
@@ -142,7 +148,6 @@ export class Explore implements OnInit {
     const chips: { key: keyof PhotoFilter; label: string }[] = [];
     if (this.filter.camera) chips.push({ key: 'camera', label: this.filter.camera });
     if (this.filter.location) chips.push({ key: 'location', label: this.filter.location });
-    if (this.filter.specs) chips.push({ key: 'specs', label: this.filter.specs });
     if (this.filter.category) chips.push({ key: 'category', label: 'Kategorie gewählt' });
     if (this.filter.searchTerm) chips.push({ key: 'searchTerm', label: '"' + this.filter.searchTerm + '"' });
     return chips;
@@ -167,7 +172,7 @@ export class Explore implements OnInit {
   }
 
   clearAllFilters(): void {
-    this.onFilterChange({ camera: '', location: '', specs: '', category: '', searchTerm: '' });
+    this.onFilterChange({ camera: '', location: '', category: '', searchTerm: '' });
   }
 
   setSort(option: 'newest' | 'popular'): void {

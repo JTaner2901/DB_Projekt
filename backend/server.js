@@ -63,7 +63,27 @@ app.get('/api/categories', async (req, res) => {
   }
 });
 
-// Genau ein Foto mit ALLEN Details auslesen (Kamera, Einstellungen, Kategorien)
+// Alle Kamera-Hersteller, die tatsächlich mind. ein Foto haben (für den
+// Kamera-Filter in Discover - macht mehr Sinn als exakte Modelle, da es
+// z.B. sehr viele "iPhone 15"-Fotos aber kaum Wiederholungen bei exakten
+// Kamera-Modellen gibt).
+app.get('/api/camera-brands', async (req, res) => {
+  try {
+    const [rows] = await pool.query(`
+      SELECT DISTINCT k.Hersteller
+      FROM Kamera k
+      JOIN Photo p ON p.Kamera_Id = k.Kamera_Id
+      WHERE k.Hersteller IS NOT NULL AND k.Hersteller != ''
+      ORDER BY k.Hersteller
+    `);
+    res.json(rows.map(r => r.Hersteller));
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Datenbankfehler' });
+  }
+});
+
+// Genau ein Foto mit ALLEN Details auslesen (Kamera, Einstellungen, Kategorien, Tags)
 app.get('/api/photos/:id', async (req, res) => {
   try {
     const [rows] = await pool.query(`
@@ -92,6 +112,16 @@ app.get('/api/photos/:id', async (req, res) => {
     `, [req.params.id]);
 
     foto.Kategorien = kategorien.map(k => k.Name);
+
+    // Tags dazuladen
+    const [tags] = await pool.query(`
+      SELECT t.Name
+      FROM Tag t
+      JOIN Photo_Tag pt ON t.TagID = pt.TagID
+      WHERE pt.photo_Id = ?
+    `, [req.params.id]);
+
+    foto.Tags = tags.map(t => t.Name);
 
     res.json(foto);
   } catch (err) {
@@ -188,11 +218,12 @@ app.put('/api/users/:id/profile', upload.single('profilbild'), async (req, res) 
 // ============================================================
 
 app.post('/api/photos', upload.single('bild'), async (req, res) => {
-  const { user_Id, Kamera_Id, Titel, Beschreibung, Datum, Location } = req.body;
+  const { user_Id, Titel, Beschreibung, Datum, Location, Kamera_Hersteller, Kamera_Modell } = req.body;
 
   const bildpfad = req.file ? req.file.path : null;
   const kategorien = req.body.kategorien ? JSON.parse(req.body.kategorien) : [];
   const einstellungen = req.body.einstellungen ? JSON.parse(req.body.einstellungen) : null;
+  const tags = req.body.tags ? JSON.parse(req.body.tags) : [];
 
   if (!user_Id || !Titel || !Datum) {
     return res.status(400).json({ error: 'user_Id, Titel und Datum sind Pflicht' });
@@ -202,10 +233,31 @@ app.post('/api/photos', upload.single('bild'), async (req, res) => {
   try {
     await conn.beginTransaction();
 
+    // Kamera finden oder neu anlegen (Hersteller+Modell), damit der
+    // Kamera-Filter in Discover echte Daten hat. Vorher wurde das komplett
+    // übersprungen, Kamera_Id blieb immer NULL.
+    let kameraId = null;
+    if (Kamera_Hersteller) {
+      const [vorhandeneKamera] = await conn.query(
+        'SELECT Kamera_Id FROM Kamera WHERE Hersteller = ? AND Modell = ?',
+        [Kamera_Hersteller, Kamera_Modell || '']
+      );
+
+      if (vorhandeneKamera.length > 0) {
+        kameraId = vorhandeneKamera[0].Kamera_Id;
+      } else {
+        const [neueKamera] = await conn.query(
+          'INSERT INTO Kamera (Hersteller, Modell) VALUES (?, ?)',
+          [Kamera_Hersteller, Kamera_Modell || null]
+        );
+        kameraId = neueKamera.insertId;
+      }
+    }
+
     const [result] = await conn.query(
       `INSERT INTO Photo (user_Id, Kamera_Id, Titel, Beschreibung, Datum, Location, Bildpfad)
       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [user_Id, Kamera_Id || null, Titel, Beschreibung || null, Datum, Location || null, bildpfad]
+      [user_Id, kameraId, Titel, Beschreibung || null, Datum, Location || null, bildpfad]
     );
     const photoId = result.insertId;
 
@@ -225,6 +277,32 @@ app.post('/api/photos', upload.single('bild'), async (req, res) => {
         await conn.query(
           'INSERT INTO Photo_Kategorie (photo_Id, KategorieID) VALUES (?, ?)',
           [photoId, katId]
+        );
+      }
+    }
+
+    // Tags speichern - jeder Tag wird (falls neu) in der Tag-Tabelle
+    // angelegt und dann mit dem Foto verknüpft. Normalisiert auf
+    // Kleinschreibung, damit "Sonnenuntergang" und "sonnenuntergang"
+    // nicht als zwei verschiedene Tags gezählt werden.
+    if (Array.isArray(tags)) {
+      for (const tagRoh of tags) {
+        const tagName = String(tagRoh).trim().toLowerCase();
+        if (!tagName) continue;
+
+        const [vorhandeneTags] = await conn.query('SELECT TagID FROM Tag WHERE Name = ?', [tagName]);
+
+        let tagId;
+        if (vorhandeneTags.length > 0) {
+          tagId = vorhandeneTags[0].TagID;
+        } else {
+          const [neuerTag] = await conn.query('INSERT INTO Tag (Name) VALUES (?)', [tagName]);
+          tagId = neuerTag.insertId;
+        }
+
+        await conn.query(
+          'INSERT IGNORE INTO Photo_Tag (photo_Id, TagID) VALUES (?, ?)',
+          [photoId, tagId]
         );
       }
     }
@@ -297,25 +375,30 @@ app.post('/api/auth/register', async (req, res) => {
   }
 });
 
+// Login erlaubt sowohl Email als auch Benutzername - "Email" im Body-Feld
+// heißt hier einfach nur "das, was der Nutzer eingegeben hat"
 app.post('/api/auth/login', async (req, res) => {
   const { Email, Passwort } = req.body;
 
   if (!Email || !Passwort) {
-    return res.status(400).json({ error: 'Email und Passwort sind Pflicht' });
+    return res.status(400).json({ error: 'Email/Benutzername und Passwort sind Pflicht' });
   }
 
   try {
-    const [rows] = await pool.query('SELECT * FROM Benutzer WHERE Email = ?', [Email]);
+    const [rows] = await pool.query(
+      'SELECT * FROM Benutzer WHERE Email = ? OR Benutzername = ?',
+      [Email, Email]
+    );
 
     if (rows.length === 0) {
-      return res.status(401).json({ error: 'Email oder Passwort falsch' });
+      return res.status(401).json({ error: 'Zugangsdaten falsch' });
     }
 
     const benutzer = rows[0];
     const passwortStimmt = await bcrypt.compare(Passwort, benutzer.Passwort);
 
     if (!passwortStimmt) {
-      return res.status(401).json({ error: 'Email oder Passwort falsch' });
+      return res.status(401).json({ error: 'Zugangsdaten falsch' });
     }
 
     res.json({
@@ -465,22 +548,31 @@ app.get('/api/users/:id/likes-summary', async (req, res) => {
   }
 });
 
+// Alle Fotos, optional gefiltert nach Kategorie. Liefert jetzt zusätzlich
+// den Kamera-Hersteller und eine zusammengefasste Tag-Liste pro Foto mit,
+// damit Explore clientseitig nach Kamera-Marke filtern und die Suche auch
+// Tags durchsuchen kann.
 app.get('/api/photos', async (req, res) => {
   const { kategorie } = req.query;
   try {
     let sql = `
       SELECT p.photo_Id, p.Titel, p.Beschreibung, p.Datum, p.Location, p.Bildpfad,
             b.Benutzername,
-            (SELECT COUNT(*) FROM Likes l WHERE l.photo_Id = p.photo_Id) AS likes
+            k.Hersteller,
+            (SELECT COUNT(*) FROM Likes l WHERE l.photo_Id = p.photo_Id) AS likes,
+            GROUP_CONCAT(DISTINCT t.Name SEPARATOR ', ') AS tagsText
       FROM Photo p
       JOIN Benutzer b ON p.user_Id = b.user_Id
+      LEFT JOIN Kamera k ON p.Kamera_Id = k.Kamera_Id
+      LEFT JOIN Photo_Tag pt ON p.photo_Id = pt.photo_Id
+      LEFT JOIN Tag t ON pt.TagID = t.TagID
     `;
     const params = [];
     if (kategorie) {
       sql += ' JOIN Photo_Kategorie pk ON p.photo_Id = pk.photo_Id WHERE pk.KategorieID = ?';
       params.push(kategorie);
     }
-    sql += ' ORDER BY p.Datum DESC';
+    sql += ' GROUP BY p.photo_Id ORDER BY p.Datum DESC';
     const [rows] = await pool.query(sql, params);
     res.json(rows);
   } catch (err) {
@@ -542,6 +634,7 @@ app.delete('/api/photos/:id', async (req, res) => {
     // Erst alle abhängigen Zeilen löschen, damit keine Fremdschlüssel-Fehler entstehen
     await conn.query('DELETE FROM Kamera_Einstellungen WHERE Photo_Id = ?', [photoId]);
     await conn.query('DELETE FROM Photo_Kategorie WHERE photo_Id = ?', [photoId]);
+    await conn.query('DELETE FROM Photo_Tag WHERE photo_Id = ?', [photoId]);
     await conn.query('DELETE FROM Likes WHERE photo_Id = ?', [photoId]);
     await conn.query('DELETE FROM Kommentar WHERE photo_Id = ?', [photoId]);
     await conn.query('DELETE FROM Photo WHERE photo_Id = ?', [photoId]);

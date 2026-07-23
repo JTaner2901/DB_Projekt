@@ -213,15 +213,12 @@ export class UploadPage implements OnInit {
       const adresse = daten?.address;
       if (!adresse) return;
 
-      // Nur übernehmen, wenn der Nutzer nicht schon selbst was eingetragen hat
       if (!this.stadt) {
         const ort = adresse.city || adresse.town || adresse.village || adresse.municipality || adresse.county;
         if (ort) this.stadt = ort;
       }
 
       if (!this.land && adresse.country) {
-        // Muss exakt mit einem Eintrag aus unserer Länderliste übereinstimmen,
-        // sonst bleibt das Dropdown lieber leer statt einen falschen Wert zu zeigen
         const treffer = this.laender.find(
           (l) => l.toLowerCase() === adresse.country.toLowerCase()
         );
@@ -313,6 +310,24 @@ export class UploadPage implements OnInit {
 
     if (this.categoryId) {
       formData.append('kategorien', JSON.stringify([this.categoryId]));
+    }
+
+    // BUGFIX: cameraBody ("Apple iPhone 15 Pro Max") wurde bisher komplett
+    // NICHT mitgeschickt - die Kamera-Tabelle blieb dadurch immer leer.
+    // Wir trennen am ersten Leerzeichen: erstes Wort = Hersteller, Rest = Modell.
+    const cameraBodyTrim = this.cameraBody.trim();
+    if (cameraBodyTrim) {
+      const teile = cameraBodyTrim.split(' ');
+      const hersteller = teile[0];
+      const modell = teile.slice(1).join(' ');
+      formData.append('Kamera_Hersteller', hersteller);
+      formData.append('Kamera_Modell', modell);
+    }
+
+    // BUGFIX: Tags wurden bisher gesammelt, aber nie ans Backend geschickt -
+    // landeten dadurch nirgends in der DB. Jetzt korrekt mit angehängt.
+    if (this.tags.length > 0) {
+      formData.append('tags', JSON.stringify(this.tags));
     }
 
     // Nur Werte mitschicken, die auch wirklich ausgefüllt wurden.

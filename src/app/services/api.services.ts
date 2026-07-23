@@ -74,6 +74,11 @@ export class ApiService {
     return this.http.get(`${API_URL}/api/categories`);
   }
 
+  // Alle Kamera-Hersteller, die tatsächlich Fotos haben (für den Kamera-Filter)
+  getCameraBrands(): Observable<any> {
+    return this.http.get(`${API_URL}/api/camera-brands`);
+  }
+
   // ============ KOMMENTARE ============
 
   getComments(photoId: number): Observable<any> {

@@ -1,8 +1,8 @@
-import { Component, EventEmitter, Input, OnChanges, OnDestroy, Output, signal } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, Output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { forkJoin, Subscription } from 'rxjs';
+import { RouterLink } from '@angular/router';
+import { forkJoin } from 'rxjs';
 import { ApiService } from '../services/api.services';
-import { WebsocketService, WsMessage } from '../services/websocket.service';
 import { Auth } from '../auth/Auth';
 import { bildUrl } from '../shared/bild-url';
 
@@ -32,11 +32,11 @@ type ModalStatus = 'idle' | 'loading' | 'loaded' | 'error';
 
 @Component({
   selector: 'app-photo-detail',
-  imports: [CommonModule],
+  imports: [CommonModule, RouterLink],
   templateUrl: './PhotoDetail.html',
   styleUrl: './PhotoDetail.css'
 })
-export class PhotoDetail implements OnChanges, OnDestroy {
+export class PhotoDetail implements OnChanges {
   @Input() photoId: number | null = null;
   @Output() close = new EventEmitter<void>();
   @Output() photoDeleted = new EventEmitter<number>();
@@ -50,22 +50,7 @@ export class PhotoDetail implements OnChanges, OnDestroy {
   liked = signal(false);
   status = signal<ModalStatus>('idle');
 
-  private wsSubscription?: Subscription;
-
-  constructor(
-    private api: ApiService,
-    public auth: Auth,
-    private ws: WebsocketService,
-  ) {
-    // Live mitbekommen, wenn jemand anders das gerade offene Foto liked
-    // oder löscht, während das Modal offen ist.
-    this.ws.connect();
-    this.wsSubscription = this.ws.messages.subscribe((msg) => this.handleWsMessage(msg));
-  }
-
-  ngOnDestroy(): void {
-    this.wsSubscription?.unsubscribe();
-  }
+  constructor(private api: ApiService, public auth: Auth) {}
 
   ngOnChanges(): void {
     if (this.photoId) {
@@ -182,27 +167,5 @@ export class PhotoDetail implements OnChanges, OnDestroy {
       },
       error: (err) => console.error('Like fehlgeschlagen', err),
     });
-  }
-
-  private handleWsMessage(msg: WsMessage): void {
-    const aktuellesFoto = this.photo();
-    if (!aktuellesFoto) return;
-
-    switch (msg.type) {
-      case 'like-update':
-        // Likes eines ANDEREN Nutzers auf das gerade offene Foto live übernehmen
-        if (msg.photo_Id === aktuellesFoto.photo_Id) {
-          this.likes.set(msg.likes);
-        }
-        break;
-
-      case 'photo-deleted':
-        // Jemand anders hat das gerade offene Foto gelöscht -> Modal schließen
-        if (msg.photo_Id === aktuellesFoto.photo_Id) {
-          this.photoDeleted.emit(msg.photo_Id);
-          this.onClose();
-        }
-        break;
-    }
   }
 }

@@ -33,10 +33,10 @@
 
       <div class="modal-info">
         <div class="info-header">
-          <div class="author">
+          <a [routerLink]="['/profile', photo()?.user_Id]" class="author" (click)="onClose()">
             <div class="avatar-circle">{{ (photo()?.Benutzername || '?')[0] }}</div>
             <span>{{ photo()?.Benutzername }}</span>
-          </div>
+          </a>
 
           <div class="header-actions">
             <button class="like-btn" [class.liked]="liked()" (click)="toggleLike()">

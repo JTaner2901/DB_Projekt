@@ -15,5 +15,6 @@ export const routes: Routes = [
   { path: 'profil-einrichten', component: ProfilEinrichten },
   { path: 'upload', component: UploadPage, canActivate: [profileCompleteGuard] },
   { path: 'profile', component: Profile, canActivate: [profileCompleteGuard] },
+  { path: 'profile/:id', component: Profile, canActivate: [profileCompleteGuard] },
   { path: 'explore', component: Explore, canActivate: [profileCompleteGuard] },
 ];

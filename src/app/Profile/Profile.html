@@ -15,7 +15,7 @@
     </div>
 
     <div class="header-actions">
-      <a routerLink="/profil-einrichten" class="edit-btn">
+      <a routerLink="/profil-einrichten" class="edit-btn" *ngIf="istEigenesProfil">
         <i class="ti ti-pencil"></i> Profil bearbeiten
       </a>
     </div>

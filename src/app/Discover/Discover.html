@@ -3,8 +3,8 @@
     <div class="pills">
       <div class="filter-pill">
         <select [(ngModel)]="filter.camera" (ngModelChange)="onFilterChange()">
-          <option value="">Camera</option>
-          <option *ngFor="let c of cameras" [value]="c">{{ c }}</option>
+          <option value="">Kamera</option>
+          <option *ngFor="let c of cameras()" [value]="c">{{ c }}</option>
         </select>
         <i class="ti ti-chevron-down"></i>
       </div>
@@ -17,14 +17,6 @@
         <i class="ti ti-chevron-down"></i>
       </div>
 
-      <div class="filter-pill">
-        <select [(ngModel)]="filter.specs" (ngModelChange)="onFilterChange()">
-          <option value="">Specs</option>
-          <option *ngFor="let s of specs" [value]="s">{{ s }}</option>
-        </select>
-        <i class="ti ti-chevron-down"></i>
-      </div>
-
       <button class="clear-link" (click)="resetFilters()">Clear Filters</button>
     </div>
 
@@ -32,7 +24,7 @@
       <i class="ti ti-search"></i>
       <input
         type="text"
-        placeholder="Search photos, artists, or equipment..."
+        placeholder="Suche nach Fotograf, Ort oder Tag..."
         [(ngModel)]="filter.searchTerm"
         (ngModelChange)="onFilterChange()"
       />

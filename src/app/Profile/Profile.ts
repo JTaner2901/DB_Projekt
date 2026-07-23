@@ -1,12 +1,10 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { RouterLink, ActivatedRoute } from '@angular/router';
 import { ApiService } from '../services/api.services';
 import { Auth } from '../auth/Auth';
 import { PhotoDetail } from '../PhotoDetail/PhotoDetail';
 import { bildUrl } from '../shared/bild-url';
-
-const API_BASE = 'http://localhost:3000';
 
 interface EigenesFoto {
   photo_Id: number;
@@ -38,15 +36,40 @@ export class Profile implements OnInit {
 
   selectedPhotoId: number | null = null;
 
-  constructor(private api: ApiService, private auth: Auth) {}
+  // Zeigt an, ob gerade das EIGENE Profil angeschaut wird (nur dann
+  // "Profil bearbeiten"-Button anzeigen)
+  angezeigterUserId: number | null = null;
+  istEigenesProfil = false;
+
+  constructor(
+    private api: ApiService,
+    public auth: Auth,
+    private route: ActivatedRoute
+  ) {}
 
   ngOnInit(): void {
-    const benutzer = this.auth.currentUser();
-    if (!benutzer) return;
+    // paramMap statt snapshot, damit ein Wechsel zu einem ANDEREN Profil
+    // (z.B. von Profil A direkt zu Profil B über ein Foto) auch dann
+    // funktioniert, wenn Angular dieselbe Komponenten-Instanz wiederverwendet
+    this.route.paramMap.subscribe((params) => {
+      const idAusUrl = params.get('id');
+      const eigenerBenutzer = this.auth.currentUser();
+
+      this.angezeigterUserId = idAusUrl ? Number(idAusUrl) : eigenerBenutzer?.user_Id ?? null;
+      this.istEigenesProfil = this.angezeigterUserId === eigenerBenutzer?.user_Id;
+
+      if (this.angezeigterUserId) {
+        this.ladeProfil(this.angezeigterUserId);
+      }
+    });
+  }
+
+  private ladeProfil(userId: number): void {
+    this.isLoading.set(true);
 
     // Vollständiges Profil aus der DB laden - Location/Bio/Profilbild/
     // Registrierungsdatum stehen nicht alle in der Login-Session
-    this.api.getUser(benutzer.user_Id).subscribe({
+    this.api.getUser(userId).subscribe({
       next: (daten) => {
         this.benutzername.set(daten.Benutzername);
         this.beschreibung.set(daten.Beschreibung);
@@ -57,7 +80,7 @@ export class Profile implements OnInit {
       error: (err) => console.error('Profil konnte nicht geladen werden', err),
     });
 
-    this.api.getPhotosByUser(benutzer.user_Id).subscribe({
+    this.api.getPhotosByUser(userId).subscribe({
       next: (daten: any[]) => {
         this.photos.set(
           daten.map((p) => ({
@@ -74,7 +97,7 @@ export class Profile implements OnInit {
       },
     });
 
-    this.api.getLikesSummary(benutzer.user_Id).subscribe({
+    this.api.getLikesSummary(userId).subscribe({
       next: (daten: { erhalten: number; gegeben: number }) => {
         this.likesErhalten.set(daten.erhalten);
         this.likesGegeben.set(daten.gegeben);

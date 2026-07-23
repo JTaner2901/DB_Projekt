@@ -4,15 +4,15 @@ import { CommonModule } from '@angular/common';
 import { ApiService } from '../services/api.services';
 import { LAENDER } from '../shared/laender';
 
-// category ist jetzt die KategorieID (Zahl) als String im Filter-Objekt,
-// oder '' wenn keine Kategorie gewählt ist. So passt es exakt zu dem,
-// was das Backend bei ?kategorie=<ID> erwartet.
-// location ist jetzt ein LAND (nicht mehr eine feste Stadt) - siehe
-// Erklärung im Chat, warum das umgestellt wurde.
+// category ist die KategorieID (Zahl) als String im Filter-Objekt, oder ''
+// wenn keine Kategorie gewählt ist - passt zu ?kategorie=<ID> im Backend.
+// location ist ein LAND. camera ist jetzt ein HERSTELLER (z.B. "Apple",
+// "Samsung"), nicht mehr ein exaktes Modell - siehe Chat-Erklärung.
+// specs/Lens wurde komplett entfernt: die Werte sind zu lang und
+// uneinheitlich für ein Dropdown, läuft jetzt über die normale Suche.
 export interface PhotoFilter {
   camera: string;
   location: string;
-  specs: string;
   category: string;
   searchTerm: string;
 }
@@ -32,10 +32,9 @@ interface Kategorie {
 export class Discover implements OnInit {
   @Output() filterChange = new EventEmitter<PhotoFilter>();
 
-  // Kamera/Specs bleiben vorerst als feste Auswahl, weil das Backend
-  // diese Werte noch nicht pro Foto mitliefert (siehe Erklärung im Chat)
-  cameras: string[] = ['Canon EOS R5', 'Sony A7 IV', 'Nikon Z6', 'Fujifilm X-T5'];
-  specs: string[] = ['f/1.4 - f/2.8', 'f/4 - f/8', 'ISO 100-400', 'ISO 800+'];
+  // Kamera-Hersteller kommen jetzt live aus der DB (nur Marken, die auch
+  // wirklich Fotos haben) statt einer hartcodierten Modell-Liste
+  cameras = signal<string[]>([]);
 
   // Länder statt fester Städte - passend zu Stadt+Land beim Upload
   laender = LAENDER;
@@ -43,7 +42,6 @@ export class Discover implements OnInit {
   filter: PhotoFilter = {
     camera: '',
     location: '',
-    specs: '',
     category: '',
     searchTerm: '',
   };
@@ -59,6 +57,11 @@ export class Discover implements OnInit {
       next: (daten) => this.categories.set(daten),
       error: (err) => console.error('Kategorien konnten nicht geladen werden', err),
     });
+
+    this.api.getCameraBrands().subscribe({
+      next: (daten) => this.cameras.set(daten),
+      error: (err) => console.error('Kamera-Hersteller konnten nicht geladen werden', err),
+    });
   }
 
   onFilterChange(): void {
@@ -66,7 +69,7 @@ export class Discover implements OnInit {
   }
 
   resetFilters(): void {
-    this.filter = { camera: '', location: '', specs: '', category: '', searchTerm: '' };
+    this.filter = { camera: '', location: '', category: '', searchTerm: '' };
     this.onFilterChange();
   }
 
